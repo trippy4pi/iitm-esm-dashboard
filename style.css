@@ -1,7 +1,53 @@
-html, body {
+
+:root {
+    --bg-color: #f1f5f9;
+    --card-bg: #ffffff;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --accent: #2563eb;
+    --border: #cbd5e1;
+    --border-strong: #000000;
+    --ocean: #add7ff;
+}
+
+* {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
-    height: 100%;
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+header {
+    padding: 1rem 2rem;
+    border-bottom: 2px solid var(--border);
+    background: #ffffff;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 0.1rem;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+}
+
+header p {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 600;
 }
 
 #map {
