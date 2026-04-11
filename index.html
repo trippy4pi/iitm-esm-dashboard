@@ -4,6 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
     <title>IITM-ESM Dashboard</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -13,8 +17,11 @@
         <h1>IITM-ESM Climate Projections</h1>
         <p>based on Shared Socioeconomic Pathways</p>
     </header>
+    <div id="map"></div>
     <footer>
         Data source: IITM-ESM outputs for Indian Region • Spatial Resolution: 0.25° 
     </footer>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="script.js"></script>
 </body>
+</html>
