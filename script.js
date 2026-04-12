@@ -1,110 +1,148 @@
-// Initialize the same base map in three containers side-by-side
-// Shift center slightly to the right (east) so India appears a bit more centered visually
-const center = [22.9734, 82.5]; // adjusted India center (longitude shifted east)
-const startZoom = 4.5; // default zoom
+// Global state and configuration
+let variablesConfig = null;
+let isAnimating = false;
 
-const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-const tileOpts = {
-    maxZoom: 8,
-    attribution: '&copy; OpenStreetMap contributors'
+const terms = {
+    'near': { id: 'near-term-header', label: 'Near-term (2025-2036)' },
+    'mid': { id: 'mid-term-header', label: 'Mid-term (2050-2070)' },
+    'long': { id: 'long-term-header', label: 'Long-term (2081-2100)' }
 };
 
-['map-near-term', 'map-mid-term', 'map-long-term'].forEach((id) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-
-    // Ensure the container has an explicit height (Leaflet needs it)
-    el.style.height = '100%';
-
-    // set map options: enforce minimum zoom and allow fractional zoom (zoomSnap: 0)
-    const mapOpts = {
-        zoomControl: true,
-        minZoom: 4.5,
-        maxZoom: 8,
-        zoomSnap: 0,
-    };
-
-    const m = L.map(id, mapOpts).setView(center, startZoom);
-    L.tileLayer(tileUrl, tileOpts).addTo(m);
-});
-
-// Header control buttons logic
+// Initialize Leaflet maps once
+const mapViews = {};
 (() => {
-    const buttons = Array.from(document.querySelectorAll('.ctrl-btn'));
-    if (!buttons.length) return;
+    const center = [22.9734, 82.5];
+    const startZoom = 4.5;
+    const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    const tileOpts = { maxZoom: 8, attribution: '&copy; OpenStreetMap contributors' };
 
-    // store current selection
-    let current = null;
+    ['near', 'mid', 'long'].forEach((term) => {
+        const id = `map-${term}-term`;
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.style.height = '100%';
+        const m = L.map(id, { zoomControl: true, minZoom: 4.5, maxZoom: 8, zoomSnap: 0 }).setView(center, startZoom);
+        L.tileLayer(tileUrl, tileOpts).addTo(m);
+        mapViews[term] = m;
+    });
+})();
 
-    function setActive(btn) {
+async function loadConfig() {
+    try {
+        const response = await fetch('JSONs/VARIABLES.json');
+        variablesConfig = await response.json();
+        updateDashboard();
+    } catch (error) {
+        console.error('Error loading config:', error);
+    }
+}
+
+function updateDashboard() {
+    if (!variablesConfig) return;
+    const metric = window.selectedMetric?.();
+    const scenario = window.selectedScenario?.();
+    if (!metric || !scenario) return;
+
+    const config = variablesConfig[metric];
+    const data = config?.scenarios[scenario];
+    if (!data) return;
+
+    Object.keys(terms).forEach(key => {
+        document.getElementById(terms[key].id).innerText = `${scenario} ${terms[key].label}`;
+    });
+
+    ['legend-near', 'legend-mid', 'legend-long'].forEach(id => {
+        const container = document.getElementById(id);
+        if (!container) return;
+        container.querySelector('.legend-scale').style.background = `linear-gradient(to right, ${data.colors.join(',')})`;
+        container.querySelector('span[id$="-min-label"]').innerText = `${data.min} ${config.unit}`;
+        container.querySelector('span[id$="-max-label"]').innerText = `${data.max} ${config.unit}`;
+    });
+}
+
+// Controls Logic
+(() => {
+    const buttons = document.querySelectorAll('.ctrl-btn');
+    const slider = document.getElementById('ssp-range');
+    const mapsRow = document.querySelector('.maps-row');
+    const prevBtn = document.getElementById('prev-scenario');
+    const nextBtn = document.getElementById('next-scenario');
+    const labels = ['SSP126', 'SSP245', 'SSP370', 'SSP585'];
+
+    let currentMetric = 'mean_temp';
+    let lastScenarioValue = Number(slider.value);
+
+    function setMetric(metric, force = false) {
+        if (!force && currentMetric === metric) return;
+        currentMetric = metric;
         buttons.forEach(b => {
-            b.classList.remove('active');
-            b.setAttribute('aria-pressed', 'false');
+            const active = b.dataset.metric === metric;
+            b.classList.toggle('active', active);
+            b.setAttribute('aria-pressed', String(active));
         });
-        if (btn) {
-            btn.classList.add('active');
-            btn.setAttribute('aria-pressed', 'true');
-            current = btn.dataset.metric;
-            // placeholder: application logic when metric changes
-            console.log('Selected metric:', current);
-        } else {
-            current = null;
+        updateDashboard();
+    }
+
+    // High speed update for labels/colors (during dragging)
+    function fastScenarioUpdate(val) {
+        slider.value = val;
+        const container = slider.closest('.scenario-slider');
+        if (container) {
+            container.className = `scenario-slider ssp-${val}`;
         }
     }
 
-    // click + keyboard support
-    buttons.forEach(b => {
-        b.addEventListener('click', () => setActive(b));
-        b.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                setActive(b);
-            }
-        });
-    });
+    window.selectedMetric = () => currentMetric;
+    window.selectedScenario = () => labels[slider.value];
 
-    // set 'Mean Temperature' as the default active metric
-    const defaultBtn = buttons.find(b => b.dataset.metric === 'mean_temp') || buttons[0];
-    setActive(defaultBtn);
+    async function transitionToScenario(newVal) {
+        if (isAnimating || newVal === lastScenarioValue) return;
+        isAnimating = true;
 
-    // expose current selection for other modules
-    window.selectedMetric = () => current;
-})();
+        const increment = newVal > lastScenarioValue || (lastScenarioValue === 3 && newVal === 0);
+        // Special case for looping: if moving from 3 to 0, it's an "increment" (right)
+        // If moving from 0 to 3, it's a "decrement" (left)
+        const isActuallyForward = (newVal > lastScenarioValue && !(lastScenarioValue === 0 && newVal === 3)) || (lastScenarioValue === 3 && newVal === 0);
 
-// SSP scenario slider logic
-(() => {
-    const slider = document.getElementById('ssp-range');
-    if (!slider) return;
+        mapsRow.classList.add(isActuallyForward ? 'slide-out-left' : 'slide-out-right');
+        await new Promise(r => setTimeout(r, 400));
 
-    const labels = ['SSP126', 'SSP245', 'SSP370', 'SSP585'];
-    // store current scenario index
-    let currentIndex = Number(slider.value) || 3;
+        fastScenarioUpdate(newVal);
+        lastScenarioValue = newVal;
+        updateDashboard();
 
-    function updateAria(val) {
-        slider.setAttribute('aria-valuenow', String(val));
+        mapsRow.style.transition = 'none';
+        mapsRow.classList.remove('slide-out-left', 'slide-out-right');
+        mapsRow.classList.add(isActuallyForward ? 'slide-in-right' : 'slide-in-left');
+        void mapsRow.offsetWidth;
+
+        mapsRow.style.transition = '';
+        mapsRow.classList.remove('slide-in-right', 'slide-in-left');
+        setTimeout(() => isAnimating = false, 400);
     }
 
-    function announce(idx) {
-        const name = labels[idx];
-        console.log('Selected scenario:', name);
-        // expose selected scenario
-        window.selectedScenario = () => name;
-    }
+    buttons.forEach(b => b.addEventListener('click', () => setMetric(b.dataset.metric)));
 
-    // initialize
-    updateAria(currentIndex);
-    announce(currentIndex);
+    // Slider: Dragging updates UI, Release triggers animation & data
+    slider.addEventListener('input', (e) => fastScenarioUpdate(e.target.value));
+    slider.addEventListener('change', (e) => transitionToScenario(Number(e.target.value)));
 
-    slider.addEventListener('input', (e) => {
-        const v = Number(e.target.value);
-        currentIndex = v;
-        updateAria(v);
+    prevBtn?.addEventListener('click', () => {
+        const newVal = (lastScenarioValue - 1 + 4) % 4;
+        transitionToScenario(newVal);
+    });
+    nextBtn?.addEventListener('click', () => {
+        const newVal = (lastScenarioValue + 1) % 4;
+        transitionToScenario(newVal);
     });
 
-    slider.addEventListener('change', (e) => {
-        const v = Number(e.target.value);
-        currentIndex = v;
-        updateAria(v);
-        announce(v);
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') prevBtn.click();
+        if (e.key === 'ArrowRight') nextBtn.click();
     });
+
+    // Init with highlights
+    setMetric('mean_temp', true);
+    fastScenarioUpdate(lastScenarioValue);
+    loadConfig();
 })();
