@@ -25,6 +25,83 @@ body {
     overflow: hidden;
 }
 
+/* ── Mobile scroll override ── */
+@media (max-width: 768px) {
+    body {
+        height: auto;
+        min-height: 100dvh;
+        overflow-y: auto;
+    }
+}
+
+/* ═══════════════════════════════════════
+   Map loading overlay
+   ═══════════════════════════════════════ */
+.map-loader {
+    position: absolute;
+    inset: 0;
+    z-index: 9000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: inherit;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: none;
+}
+
+/* Spinner ring */
+.map-loader-ring {
+    width: 38px;
+    height: 38px;
+    border: 3.5px solid rgba(37, 99, 235, 0.15);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: mapLoaderSpin 0.75s linear infinite;
+}
+
+/* Label below ring */
+.map-loader-label {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    animation: mapLoaderPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes mapLoaderSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes mapLoaderPulse {
+
+    0%,
+    100% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Hidden state — triggered by JS removing .is-loading */
+.map-container:not(.is-loading) .map-loader {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
 header {
     padding: 0.75rem 2rem;
     border-bottom: 2px solid var(--border);
@@ -73,10 +150,10 @@ main {
 
 .maps-row {
     display: flex;
-    gap: 3.25rem;
+    gap: 2rem;
     align-items: stretch;
     width: 100%;
-    max-width: calc(100% - 140px);
+    max-width: calc(100% - 120px);
     justify-content: center;
     flex-wrap: nowrap;
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
@@ -121,15 +198,18 @@ main {
 }
 
 .legend {
-    padding: 0.5rem;
-    font-size: 0.8rem;
-    background: rgba(255, 255, 255, 0.9);
-    border-top: 1px solid var(--border);
+    padding: 0.6rem 0.8rem;
+    font-size: 0.85rem;
+    background: #ffffff;
+    border-top: 1px solid var(--border-strong);
+    z-index: 50;
 }
 
 .legend-title {
-    font-weight: 700;
-    margin-bottom: 0.25rem;
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: #000;
+    margin-bottom: 0.4rem;
 }
 
 .legend-scale {
@@ -141,8 +221,25 @@ main {
 .legend-labels {
     display: flex;
     justify-content: space-between;
-    font-size: 0.75rem;
-    color: var(--text-secondary);
+    font-size: 0.9rem;
+    /* Larger */
+    font-weight: 700;
+    /* Bolder */
+    color: #000;
+    /* High contrast */
+    margin-top: 4px;
+}
+
+.map-view {
+    flex: 1;
+    width: 100%;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    position: relative;
+}
+
+.leaflet-container {
+    background: transparent !important;
 }
 
 footer {
@@ -150,9 +247,9 @@ footer {
     border-top: 1px solid var(--border);
     padding: 1rem 2rem;
     color: var(--text-secondary);
-    font-size: 0.95rem;
+    font-size: 2 rem;
     font-weight: 600;
-    line-height: 1.4;
+    line-height: 1;
     box-shadow: 0 -6px 20px -12px rgba(0, 0, 0, 0.08);
 }
 
@@ -162,13 +259,14 @@ footer {
     justify-content: space-between;
     gap: 2rem;
     max-width: 100%;
-    margin: 0;
+    margin-top: 0;
 }
 
 .header-left {
     display: flex;
     align-items: center;
     gap: 1rem;
+    margin-top: 1px;
 }
 
 .logo {
@@ -179,56 +277,74 @@ footer {
     justify-content: center;
     background: white;
     border-radius: 50%;
-    border: 1px solid var(--border);
+    border: none;
     flex: 0 0 90px;
     overflow: hidden;
 }
 
 #main-logo {
-    width: 88%;
-    height: 88%;
+    width: 95%;
+    height: 95%;
     object-fit: contain;
 }
 
 .header-text h1 {
     margin: 0;
-    font-size: 2.75rem;
+    font-size: 3rem;
     font-weight: 800;
     color: var(--text-primary);
-    line-height: 1;
+    line-height: 1.25;
 }
 
 .header-text .subtitle {
     margin: 0.1rem 0 0 0;
     color: var(--text-secondary);
-    font-size: 1.1rem;
+    font-size: 1.5rem;
     font-weight: 600;
     line-height: 1;
 }
+
 
 .header-controls {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 0.75rem;
-    flex: 1;
-    max-width: 600px;
-    margin-right: 5rem;
+    gap: 0.6rem;
+    flex: 0 0 auto;
+    width: min(600px, 55%);
+}
+
+/* align the button row with the slider width and give a small left inset */
+.header-actions {
+    display: flex;
+    width: 100%;
+    padding-left: 8px;
+    /* small empty space at left */
+    gap: 0.5rem;
+    margin-top: 8px;
 }
 
 .ctrl-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.45rem 0.9rem;
+    padding: 0.35rem 0.7rem;
+    /* slightly larger but modest */
+    min-height: 44px;
+    /* comfortable click target */
+    min-width: 120px;
+    /* modest width - buttons will grow evenly */
     background: #ffffff;
     border: 1px solid var(--border);
-    border-radius: 8px;
-    font-weight: 700;
+    border-radius: 10px;
+    font-weight: 800;
     color: var(--text-primary);
     cursor: pointer;
     transition: all 150ms ease;
-    box-shadow: 0 6px 18px -10px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 20px -12px rgba(0, 0, 0, 0.08);
+    text-align: center;
+    flex: 1 1 0;
+    /* allow buttons to expand evenly to match slider width */
 }
 
 .ctrl-btn:hover {
@@ -249,7 +365,8 @@ footer {
     align-items: stretch;
     width: 100%;
     position: relative;
-    padding: 8px 0;
+    padding: 8px 8px;
+    /* add horizontal padding so colored bands align with ticks */
     transition: all 0.4s ease;
 }
 
@@ -257,8 +374,11 @@ footer {
     appearance: none;
     -webkit-appearance: none;
     width: 100%;
-    height: 2px;
+    height: 6px;
+    /* thicker track for better alignment/visibility */
     background: linear-gradient(to right, #22c55e 0%, #22c55e 25%, #eab308 25%, #eab308 50%, #f97316 50%, #f97316 75%, #ef4444 75%, #ef4444 100%);
+    background-repeat: no-repeat;
+    border-radius: 6px;
     outline: none;
     position: relative;
     z-index: 2;
@@ -273,8 +393,20 @@ footer {
     border: 3px solid #64748b;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     cursor: pointer;
-    margin-top: -8px;
+    margin-top: -6px;
+    /* center the 18px thumb over the 6px track */
     transition: all 0.3s ease;
+}
+
+/* Firefox thumb alignment */
+.ssp-range::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid #64748b;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
 }
 
 .ssp-0 .ssp-range::-webkit-slider-thumb {
@@ -306,11 +438,27 @@ footer {
 }
 
 .ssp-ticks span {
-    width: 2px;
-    height: 10px;
+    width: 3px;
+    height: 12px;
     background: #94a3b8;
-    border-radius: 1px;
-    opacity: 0.4;
+    border-radius: 2px;
+    opacity: 0.95;
+}
+
+.ssp-ticks span:nth-child(1) {
+    background: #16a34a;
+}
+
+.ssp-ticks span:nth-child(2) {
+    background: #ca8a04;
+}
+
+.ssp-ticks span:nth-child(3) {
+    background: #ea580c;
+}
+
+.ssp-ticks span:nth-child(4) {
+    background: #dc2626;
 }
 
 .ssp-labels {
@@ -329,7 +477,7 @@ footer {
 }
 
 .ssp-labels span:first-child {
-    text-align: left;
+    text-align: justify;
 }
 
 .ssp-labels span:last-child {
@@ -384,6 +532,14 @@ footer {
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
 }
 
+/* Keyboard / programmatic pressed state so arrow keys visually match :hover */
+.nav-arrow.pressed {
+    opacity: 1;
+    background: var(--accent);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    transform: translateY(-50%);
+}
+
 .arrow-left {
     left: 20px;
     clip-path: polygon(100% 0%, 0% 50%, 100% 100%);
@@ -394,28 +550,536 @@ footer {
     clip-path: polygon(0% 0%, 100% 50%, 0% 100%);
 }
 
-@media (max-width: 900px) {
+.info-tooltip {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    font-size: 20px;
+    /* ensure tooltip trigger sits above maps but doesn't affect stacking of other controls */
+    z-index: 10010;
+}
+
+/* Tooltip panel: positioned below the trigger, responsive width, high z-index so it appears above map layers */
+.info-tooltip .tooltip-text {
+    visibility: hidden;
+    width: min(360px, 90vw);
+    background-color: #ffffff;
+    color: #0f172a;
+    text-align: left;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 8px;
+    padding: 10px 12px;
+    position: absolute;
+    z-index: 10050;
+    /* well above map elements */
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    font-size: 13px;
+    line-height: 1.4;
+    white-space: pre-line;
+    box-shadow: 0 8px 20px rgba(10, 20, 30, 0.08);
+    pointer-events: none;
+    /* allow hover to only be triggered by the parent until visible */
+}
+
+/* Visible states: hover, focus (keyboard), or when parent has .open */
+.info-tooltip:hover .tooltip-text,
+.info-tooltip:focus-within .tooltip-text,
+.info-tooltip.open .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+
+/* Position adjustments if tooltip would overflow viewport horizontally */
+@media (max-width: 420px) {
+    .info-tooltip .tooltip-text {
+        left: 8px;
+        right: 8px;
+        transform: none;
+        top: calc(100% + 6px);
+    }
+}
+
+/* Hide the original inline tooltip panel to avoid duplicate UI when using the portal
+   The portal clones the content and displays it from <body>; keeping the inline
+   element hidden prevents two tooltips showing at once. */
+.info-tooltip .tooltip-text {
+    display: none !important;
+}
+
+/* Portal tooltip (appended to body) used to escape stacking contexts like map controls */
+.tooltip-portal {
+    position: fixed !important;
+    z-index: 2147483000 !important;
+    /* very high so it appears above map controls */
+    background: #ffffff;
+    color: #0f172a;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 8px;
+    padding: 10px 12px;
+    box-shadow: 0 8px 20px rgba(10, 20, 30, 0.08);
+    font-size: 13px;
+    line-height: 1.4;
+    text-align: left;
+    pointer-events: auto;
+    max-width: min(400px, 90vw);
+}
+
+.tooltip-portal.hide {
+    display: none;
+}
+
+/* arrow for portal */
+.tooltip-portal .tooltip-arrow {
+    width: 12px;
+    height: 12px;
+    position: absolute;
+    background: inherit;
+    transform: rotate(45deg);
+    box-shadow: 0 4px 10px rgba(10, 20, 30, 0.06);
+    border-left: 1px solid rgba(15, 23, 42, 0.03);
+    border-top: 1px solid rgba(15, 23, 42, 0.03);
+}
+
+.tooltip-portal[data-placement="right"] .tooltip-arrow {
+    left: -6px;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+}
+
+.tooltip-portal[data-placement="left"] .tooltip-arrow {
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+}
+
+.tooltip-portal[data-placement="below"] .tooltip-arrow {
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+}
+
+.tooltip-portal[data-placement="above"] .tooltip-arrow {
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+}
+
+
+/* District Tooltips */
+.leaflet-tooltip.custom-tooltip-pane {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+
+.leaflet-tooltip.custom-tooltip-pane::before {
+    display: none !important;
+}
+
+.district-tooltip {
+    background: white !important;
+    border: 1.5px solid #000 !important;
+    border-radius: 8px !important;
+    padding: 10px 14px !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2) !important;
+    opacity: 1 !important;
+    pointer-events: none;
+    font-family: 'Outfit', sans-serif !important;
+    min-width: 140px;
+    text-align: center;
+}
+
+.tooltip-val {
+    display: block;
+    font-size: 1.4rem;
+    font-weight: 900;
+    margin-bottom: 2px;
+    color: #000;
+    line-height: 1.1;
+}
+
+.tooltip-dist {
+    display: block;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #222;
+    margin-top: 4px;
+    line-height: 1.2;
+}
+
+.tooltip-state {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+}
+
+/* ── Tablet / small desktop ── */
+@media (max-width: 1024px) {
+    .header-controls {
+        width: min(600px, 50%);
+    }
+
+    .maps-row {
+        gap: 1rem;
+    }
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+
+    /* Hide desktop nav arrows */
     .nav-arrow {
-        display: none;
+        display: none !important;
+    }
+
+    /* Header */
+    header {
+        padding: 0.75rem 1rem;
     }
 
     .header-inner {
         flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .header-left {
         align-items: flex-start;
+        gap: 0.75rem;
     }
 
     .logo {
-        width: 60px;
-        height: 60px;
-        flex: 0 0 60px;
+        width: 52px;
+        height: 52px;
+        flex: 0 0 52px;
     }
 
     .header-text h1 {
-        font-size: 1.8rem;
+        font-size: 1.15rem;
+        line-height: 1.25;
+        letter-spacing: -0.01em;
     }
 
+    .header-text .subtitle {
+        font-size: 0.78rem;
+        line-height: 1.3;
+        /* keep ⓘ on same line */
+        white-space: normal;
+    }
+
+    /* Collapsible toggle button */
+    .controls-toggle-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        background: #f1f5f9;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        cursor: pointer;
+    }
+
+    .controls-toggle-btn .toggle-icon {
+        transition: transform 0.3s ease;
+    }
+
+    .controls-toggle-btn.open .toggle-icon {
+        transform: rotate(180deg);
+    }
+
+    /* Controls panel */
     .header-controls {
-        margin-right: 0;
-        align-items: flex-start;
+        width: 100%;
+        max-width: 100%;
+        align-items: stretch;
+        gap: 0.5rem;
+        overflow: hidden;
+        max-height: 0;
+        transition: max-height 0.35s ease, opacity 0.3s ease;
+        opacity: 0;
+    }
+
+    .header-controls.open {
+        max-height: 400px;
+        opacity: 1;
+    }
+
+    /* Variable buttons: 2×2 grid */
+    .header-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.4rem;
+        padding-left: 0;
+        width: 100%;
+    }
+
+    .ctrl-btn {
+        min-width: 0;
+        width: 100%;
+        font-size: 0.8rem;
+        padding: 0.4rem 0.25rem;
+        min-height: 40px;
+    }
+
+    /* SSP slider full-width */
+    .scenario-slider {
+        width: 100%;
+        padding: 4px 4px;
+    }
+
+    .ssp-labels {
+        font-size: 0.6rem;
+        /* prevent SSP585 from overflowing right edge */
+        overflow: hidden;
+    }
+
+    .ssp-labels span:last-child {
+        /* give the last label a tiny inset so it doesn't clip */
+        padding-right: 2px;
+    }
+
+    /* Main: snug layout, no wasted space */
+    main {
+        flex-direction: column;
+        overflow-y: auto;
+        overflow-x: hidden;
+        align-items: center;
+        padding: 0.5rem 0.75rem 0.5rem;
+        gap: 0.5rem;
+        justify-content: flex-start;
+    }
+
+    /* Maps row: allow overlay positioning of nav arrows */
+    .maps-row {
+        flex-direction: column;
+        max-width: 100%;
+        width: 100%;
+        gap: 1rem;
+        align-items: center;
+        position: relative;
+    }
+
+    /* Map container: fill remaining viewport adaptively */
+    .map-container {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        flex: none;
+        aspect-ratio: unset;
+        /* Adaptive height: fill most of screen after header/footer */
+        height: calc(100dvh - 210px);
+        min-height: 380px;
+        max-height: 640px;
+    }
+
+    /* ─── Mobile nav arrows: centered on both sides of map ─── */
+    .mobile-map-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        left: 0;
+        right: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 10px;
+        /* must be above Leaflet tile pane (400), overlay pane (600), tooltip pane (650) */
+        z-index: 5000;
+        pointer-events: none;
+        height: auto;
+    }
+
+    .mobile-ssp-label {
+        display: none;
+    }
+
+    .mobile-nav-btn {
+        pointer-events: auto;
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1.5px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        width: 46px;
+        height: 46px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28), 0 1px 4px rgba(0, 0, 0, 0.15);
+        transition: transform 0.15s ease, background 0.15s ease;
+        user-select: none;
+        flex-shrink: 0;
+    }
+
+    .mobile-nav-btn:active {
+        transform: scale(0.88);
+        background: rgba(37, 99, 235, 0.7);
+    }
+
+    /* CSS chevron < for prev */
+    .mobile-prev::before {
+        content: '';
+        display: block;
+        width: 13px;
+        height: 13px;
+        border-left: 2.5px solid rgba(255, 255, 255, 0.95);
+        border-bottom: 2.5px solid rgba(255, 255, 255, 0.95);
+        /* slightly obtuse: rotate more than 45deg */
+        transform: rotate(50deg) translateX(3px);
+        border-radius: 1px;
+    }
+
+    /* CSS chevron > for next */
+    .mobile-next::before {
+        content: '';
+        display: block;
+        width: 13px;
+        height: 13px;
+        border-right: 2.5px solid rgba(255, 255, 255, 0.95);
+        border-top: 2.5px solid rgba(255, 255, 255, 0.95);
+        transform: rotate(50deg) translateX(-3px);
+        border-radius: 1px;
+    }
+
+    /* Hide the dots */
+    .mobile-map-dots {
+        display: none !important;
+    }
+
+    /* ─── Slide animations for map term switching ─── */
+    @keyframes mobileSlideOutLeft {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        to {
+            transform: translateX(-60px);
+            opacity: 0;
+        }
+    }
+
+    @keyframes mobileSlideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        to {
+            transform: translateX(60px);
+            opacity: 0;
+        }
+    }
+
+    @keyframes mobileSlideInRight {
+        from {
+            transform: translateX(60px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes mobileSlideInLeft {
+        from {
+            transform: translateX(-60px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    .mobile-slide-out-left {
+        animation: mobileSlideOutLeft 0.22s ease forwards;
+    }
+
+    .mobile-slide-out-right {
+        animation: mobileSlideOutRight 0.22s ease forwards;
+    }
+
+    .mobile-slide-in-right {
+        animation: mobileSlideInRight 0.22s ease forwards;
+    }
+
+    .mobile-slide-in-left {
+        animation: mobileSlideInLeft 0.22s ease forwards;
+    }
+
+    /* Legend: slightly smaller on mobile */
+    .legend {
+        padding: 0.4rem 0.6rem;
+    }
+
+    .legend-title {
+        font-size: 0.8rem;
+    }
+
+    .legend-labels {
+        font-size: 0.78rem;
+    }
+
+    /* Footer: clean two-line layout on mobile */
+    footer {
+        font-size: 0.72rem;
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        line-height: 1.5;
+        text-align: center;
+    }
+
+    .footer-desktop-hint {
+        display: block;
+        margin-top: 0.15rem;
+        color: var(--accent);
+        font-weight: 700;
+        font-size: 0.7rem;
+    }
+}
+
+/* Desktop: hide mobile-only elements */
+@media (min-width: 769px) {
+    .controls-toggle-btn {
+        display: none;
+    }
+
+    .mobile-map-dots,
+    .mobile-map-nav {
+        display: none;
+    }
+
+    /* Hide mobile-only footer hint on desktop */
+    .footer-desktop-hint {
+        display: none;
+    }
+
+    /* Desktop controls always visible */
+    .header-controls {
+        max-height: none !important;
+        opacity: 1 !important;
+        overflow: visible !important;
     }
 }

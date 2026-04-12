@@ -5,6 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;800;900&display=swap"
+        rel="stylesheet">
     <title>IITM-ESM Dashboard</title>
     <link rel="icon" type="image/x-icon" href="assets/favicon.png">
     <link rel="stylesheet" href="style.css">
@@ -19,10 +23,26 @@
                 </div>
                 <div class="header-text">
                     <h1>IITM-ESM Climate Projections</h1>
-                    <p class="subtitle">based on Shared Socioeconomic Pathways</p>
+                    <p class="subtitle">based on Shared Socioeconomic Pathways
+                        <span class="info-tooltip">ⓘ
+                            <span class="tooltip-text" id="ssp-tooltip">
+                                Shared Socioeconomic Pathways (SSPs) are scenarios detailing how global society,
+                                demographics, and economics could evolve through 2100, providing narratives for climate
+                                change research.<br><br>
+                                - IPCC AR6 WG1 Summary for Policymakers, 2021
+                            </span>
+                        </span>
+                    </p>
                 </div>
             </div>
-            <div class="header-controls">
+
+            <!-- Mobile-only toggle button -->
+            <button class="controls-toggle-btn" id="controls-toggle" aria-expanded="false"
+                aria-controls="controls-panel">
+                Variable &amp; Scenario <span class="toggle-icon">▼</span>
+            </button>
+
+            <div class="header-controls" id="controls-panel">
                 <div class="header-actions" role="toolbar" aria-label="Metric selection">
                     <button class="ctrl-btn" data-metric="precipitation" aria-pressed="false">Precipitation</button>
                     <button class="ctrl-btn" data-metric="mean_temp" aria-pressed="false">Mean Temperature</button>
@@ -47,7 +67,8 @@
         </div>
     </header>
     <main>
-        <div id="prev-scenario" class="arrow-btn nav-arrow arrow-left" aria-label="Previous Scenario"></div>
+        <div id="prev-scenario" class="arrow-btn nav-arrow arrow-left" aria-label="Previous Scenario" tabindex="0"
+            role="button"></div>
         <div class="maps-row">
             <div class="map-container" id="near-term">
                 <div class="map-header" id="near-term-header">Near-term (2025-2036)</div>
@@ -55,10 +76,10 @@
                 <div class="legend" id="legend-near">
                     <div class="legend-title">Legend</div>
                     <div class="legend-scale"
-                        style="background: linear-gradient(to right, #ffffff, #ffff00, orange, #ff0000);"></div>
+                        style="background: linear-gradient(to right, #ffffff, #ffff00, #ffa500, #ff0000);"></div>
                     <div class="legend-labels">
-                        <span id="near-min-label">placeholder min</span>
-                        <span id="near-max-label">placeholder max</span>
+                        <span id="near-min-label">min</span>
+                        <span id="near-max-label">max</span>
                     </div>
                 </div>
             </div>
@@ -69,10 +90,10 @@
                 <div class="legend" id="legend-mid">
                     <div class="legend-title">Legend</div>
                     <div class="legend-scale"
-                        style="background: linear-gradient(to right, #ffffff, #ffff00, orange, #ff0000);"></div>
+                        style="background: linear-gradient(to right, #ffffff, #ffff00, #ffa500, #ff0000);"></div>
                     <div class="legend-labels">
-                        <span id="mid-min-label">placeholder min</span>
-                        <span id="mid-max-label">placeholder max</span>
+                        <span id="mid-min-label">min</span>
+                        <span id="mid-max-label">max</span>
                     </div>
                 </div>
             </div>
@@ -83,19 +104,32 @@
                 <div class="legend" id="legend-long">
                     <div class="legend-title">Legend</div>
                     <div class="legend-scale"
-                        style="background: linear-gradient(to right, #ffffff, #ffff00, orange, #ff0000);"></div>
+                        style="background: linear-gradient(to right, #ffffff, #ffff00, #ffa500, #ff0000);"></div>
                     <div class="legend-labels">
-                        <span id="long-min-label">placeholder min</span>
-                        <span id="long-max-label">placeholder max</span>
+                        <span id="long-min-label">min</span>
+                        <span id="long-max-label">max</span>
                     </div>
                 </div>
             </div>
+            <!-- Mobile-only: map term switcher — inside maps-row so absolute positioning works -->
+            <div class="mobile-map-nav" aria-label="Switch map term">
+                <button class="mobile-nav-btn mobile-prev" id="mobile-prev-term" aria-label="Previous term"></button>
+                <span class="mobile-ssp-label" id="mobile-term-label">Near-term</span>
+                <button class="mobile-nav-btn mobile-next" id="mobile-next-term" aria-label="Next term"></button>
+            </div>
         </div>
-        <div id="next-scenario" class="arrow-btn nav-arrow arrow-right" aria-label="Next Scenario"></div>
+        <div id="next-scenario" class="arrow-btn nav-arrow arrow-right" aria-label="Next Scenario" tabindex="0"
+            role="button"></div>
+        <div class="mobile-map-dots" aria-hidden="true">
+            <button class="dot active" data-term="near"></button>
+            <button class="dot" data-term="mid"></button>
+            <button class="dot" data-term="long"></button>
+        </div>
     </main>
 
     <footer>
-        Data source: IITM-ESM outputs for Indian Region • Spatial Resolution: 0.25°
+        <span class="footer-source">Data source: IITM-ESM outputs for Indian Region &bull; 0.25&deg; x 0.25&deg;</span>
+        <span class="footer-desktop-hint">&#128187; Use desktop for best experience</span>
     </footer>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="script.js"></script>
