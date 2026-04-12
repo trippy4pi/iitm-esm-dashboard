@@ -27,17 +27,17 @@ body {
 }
 
 header {
-    padding: 1rem 2rem;
+    /* larger header area so title can be bigger and provide breathing room */
+    /* reduced side padding so header sits closer to the left edge */
+    padding: 2rem 2rem;
     border-bottom: 2px solid var(--border);
     background: #ffffff;
     z-index: 1000;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    display: block; /* use inner container for flex layout */
 }
 
 h1 {
-    font-size: 1.5rem;
+    font-size: 2.25rem; /* bigger header text */
     font-weight: 800;
     margin-bottom: 0.1rem;
     color: var(--text-primary);
@@ -50,7 +50,231 @@ header p {
     font-weight: 600;
 }
 
-#map {
+.map-container {
+    background: var(--card-bg);
+    border: 2px solid var(--border-strong);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 12px 36px -10px rgba(0, 0, 0, 0.18);
+    /* Portrait orientation (taller than wide), but slightly larger so maps are more visible */
+    width: 30%;
+    min-width: 320px;
+    aspect-ratio: 3 / 4; /* portrait orientation */
+}
+
+/* legacy #map removed - individual map containers use .map-view */
+
+main {
+    /* give breathing room and center the maps block between header and footer */
+    /* reduce horizontal padding so content is closer to the left */
+    padding: 2.25rem 2rem;
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: auto;
+    /* ensure there's visible separation from header/footer */
+    gap: 1.5rem;
+}
+
+.maps-row {
+    display: flex;
+    gap: 3.25rem; /* slightly increased space between boxes */
+    align-items: stretch;
+    /* leave a smaller room on left/right for triangle arrow buttons */
     width: 100%;
-    height: 100%;
+    max-width: calc(100% - 4rem);
+    justify-content: center;
+    /* keep all three on one row; allow horizontal scroll instead of wrapping */
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.map-header {
+    padding: 0.5rem 0.75rem;
+    background: #f8fafc;
+    text-align: center;
+    font-weight: 700;
+    border-bottom: 1px solid var(--border);
+}
+
+.map-view {
+    flex: 1 1 auto;
+    min-height: 0; /* allow flex child to shrink */
+}
+
+.map-view > .leaflet-container,
+.map-view > .leaflet-container * {
+    box-sizing: border-box;
+}
+
+.legend {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+    background: rgba(255,255,255,0.9);
+    border-top: 1px solid var(--border);
+}
+
+.legend-title { font-weight: 700; margin-bottom: 0.25rem; }
+.legend-scale { height: 10px; border-radius: 6px; margin-bottom: 0.25rem; }
+.legend-labels { display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-secondary); }
+
+/* Footer strip styling: readable, padded from the left, separate from main */
+footer {
+    background: #ffffff;
+    border-top: 1px solid var(--border);
+    padding: 1rem 2rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.4;
+    box-shadow: 0 -6px 20px -12px rgba(0,0,0,0.08);
+}
+
+/* Make header text block (title + subtitle) centered vertically */
+.header-inner {
+    display: flex;
+    /* align items to the top so actions can sit in upper half */
+    align-items: flex-start;
+    /* put header-left on the left and actions on the right */
+    justify-content: space-between;
+    gap: 1rem;
+    max-width: 1400px;
+    margin: 0; /* align header-inner to the left within header padding */
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.logo {
+    width: 72px;
+    height: 72px;
+    background: linear-gradient(180deg,#e6f0ff,#dce9ff);
+    border-radius: 50%; /* round logo */
+    border: 1px solid var(--border);
+    flex: 0 0 72px;
+}
+
+.header-text h1 {
+    margin: 0;
+    font-size: 2.25rem; /* keep title large but aligned with subtitle */
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.05;
+}
+
+.header-text .subtitle {
+    margin: 0.2rem 0 0 0;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.1;
+}
+
+/* Header action buttons (right side) */
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start; /* place buttons toward top of header */
+    margin-top: 0.25rem; /* nudge into upper half */
+}
+
+.header-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end; /* keep actions right-aligned within header-right area */
+    gap: 0.5rem;
+}
+
+.ctrl-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.45rem 0.9rem;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-weight: 700;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 150ms ease;
+    box-shadow: 0 6px 18px -10px rgba(0,0,0,0.08);
+}
+
+.ctrl-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px -12px rgba(0,0,0,0.12);
+}
+
+.ctrl-btn[aria-pressed="true"], .ctrl-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: rgba(0,0,0,0.06);
+}
+
+@media (max-width: 900px) {
+    .header-actions { width: 100%; justify-content: flex-start; gap: 0.5rem; }
+    .ctrl-btn { padding: 0.4rem 0.6rem; font-size: 0.9rem; }
+}
+
+/* Scenario slider styling */
+.scenario-slider {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 260px;
+}
+
+.ssp-range {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, rgba(37,99,235,0.9), rgba(37,99,235,0.6));
+    outline: none;
+}
+.ssp-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid var(--accent);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.18);
+    margin-top: -6px; /* center the thumb */
+}
+.ssp-range::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid var(--accent);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.18);
+}
+
+.ssp-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 6px;
+}
+
+@media (max-width: 900px) {
+    .scenario-slider { width: 100%; }
+}
+
+/* responsive: stack header on narrow viewports */
+@media (max-width: 900px) {
+    .header-inner { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+    .header-text h1 { font-size: 1.6rem; }
+    .logo { width: 56px; height: 56px; flex: 0 0 56px; }
 }

@@ -14,12 +14,80 @@
 
 <body>
     <header>
-        <div class="header-main">
-            <h1>IITM-ESM Climate Projections</h1>
-            <p>based on Shared Socioeconomic Pathways</p>
+        <div class="header-inner">
+            <div class="header-left">
+                <div class="logo" aria-hidden="true"></div>
+                <div class="header-text">
+                    <h1>IITM-ESM Climate Projections</h1>
+                    <p class="subtitle">based on Shared Socioeconomic Pathways</p>
+                </div>
+            </div>
+            <div class="header-controls">
+                <div class="header-actions" role="toolbar" aria-label="Metric selection">
+                    <button class="ctrl-btn" data-metric="precipitation" aria-pressed="false">Precipitation</button>
+                    <button class="ctrl-btn" data-metric="mean_temp" aria-pressed="false">Mean Temperature</button>
+                    <button class="ctrl-btn" data-metric="max_temp" aria-pressed="false">Max Temperature</button>
+                    <button class="ctrl-btn" data-metric="min_temp" aria-pressed="false">Min Temperature</button>
+                </div>
+
+                <div class="scenario-slider" aria-label="SSP scenario selector">
+                    <input id="ssp-range" class="ssp-range" type="range" min="0" max="3" step="1" value="3" aria-valuemin="0" aria-valuemax="3" aria-valuenow="3">
+                    <div class="ssp-ticks" aria-hidden="true">
+                        <span></span><span></span><span></span><span></span>
+                    </div>
+                    <div class="ssp-labels">
+                        <span>SSP126</span>
+                        <span>SSP245</span>
+                        <span>SSP370</span>
+                        <span>SSP585</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </header>
-    <div id="map"></div>
+    <main>
+        <div class="maps-row">
+            <div class="map-container" id="near-term">
+                <div class="map-header">Near-term (2025-2036)</div>
+                <div id="map-near-term" class="map-view"></div>
+                <div class="legend" id="legend-near">
+                    <div class="legend-title">Legend</div>
+                    <div class="legend-scale" style="background: linear-gradient(to right, #ffffff, #ffff00, orange, #ff0000);"></div>
+                    <div class="legend-labels">
+                        <span id="near-min-label">placeholder min</span>
+                        <span id="near-max-label">placeholder max</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="map-container" id="mid-term">
+                <div class="map-header">Mid-term (2050-2070)</div>
+                <div id="map-mid-term" class="map-view"></div>
+                <div class="legend" id="legend-mid">
+                    <div class="legend-title">Legend</div>
+                    <div class="legend-scale" style="background: linear-gradient(to right, #ffffff, #ffff00, orange, #ff0000);"></div>
+                    <div class="legend-labels">
+                        <span id="mid-min-label">placeholder min</span>
+                        <span id="mid-max-label">placeholder max</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="map-container" id="long-term">
+                <div class="map-header">Long-term (2081-2100)</div>
+                <div id="map-long-term" class="map-view"></div>
+                <div class="legend" id="legend-long">
+                    <div class="legend-title">Legend</div>
+                    <div class="legend-scale" style="background: linear-gradient(to right, #ffffff, #ffff00, orange, #ff0000);"></div>
+                    <div class="legend-labels">
+                        <span id="long-min-label">placeholder min</span>
+                        <span id="long-max-label">placeholder max</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
     <footer>
         Data source: IITM-ESM outputs for Indian Region • Spatial Resolution: 0.25° 
     </footer>
