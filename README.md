@@ -45,6 +45,3 @@ Feel free to open issues or make PRs. Keep changes small and include screenshots
 
 ## License
 This project is licensed under the MIT License — see the `LICENSE` file for details.
-
----
-_Generated README — edit as needed._
