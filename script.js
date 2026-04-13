@@ -14,34 +14,54 @@ const mapViews = {};
 const geoLayers = {};
 const layersMap = { 'near': {}, 'mid': {}, 'long': {} };
 
-// 1. Color Interpolation Logic
-function parseHex(hex) {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return [r, g, b];
-}
+// 1. Color Classification — fully data-driven from VARIABLES.json
+//
+// Each scenario config has:
+//   colors: ["#hex1", "#hex2", ...#hexN]      — N discrete color bands
+//   ticks:  [v0, v1, v2, ..., vN]             — N+1 breakpoints (no. of ticks = colors.length + 1)
+//   min: ticks[0],  max: ticks[N]
+//
+// You can edit colors[] and ticks[] directly in VARIABLES.json at any time.
 
-function interpolate(c1, c2, factor) {
-    const r = Math.round(c1[0] + factor * (c2[0] - c1[0]));
-    const g = Math.round(c1[1] + factor * (c2[1] - c1[1]));
-    const b = Math.round(c1[2] + factor * (c2[2] - c1[2]));
-    return `rgb(${r},${g},${b})`;
-}
-
-function getColor(val, scenarioConfig) {
+/**
+ * Returns the exact hex color for a given value.
+ * Finds which interval [ticks[i], ticks[i+1]) the value falls into
+ * and returns colors[i]. No interpolation — pure discrete classification.
+ */
+function getColor(val, cfg) {
     if (val === null || val === undefined) return '#e2e8f0';
-    const { min, max, colors } = scenarioConfig;
-    const factor = Math.max(0, Math.min(1, (val - min) / (max - min)));
+    const { colors, ticks } = cfg;
+    const n = colors.length;
+    // Values below first tick → first color; above last tick → last color
+    if (val <= ticks[0]) return colors[0];
+    if (val >= ticks[n]) return colors[n - 1];
+    for (let i = 0; i < n; i++) {
+        if (val < ticks[i + 1]) return colors[i];
+    }
+    return colors[n - 1];
+}
 
-    const parsed = colors.map(parseHex);
-    if (parsed.length === 2) return interpolate(parsed[0], parsed[1], factor);
+/**
+ * Builds a hard-stop stepped CSS gradient and the tick positions from
+ * the scenario config's colors[] and ticks[] arrays.
+ * Returns { gradient, ticks } ready for the legend DOM.
+ */
+function buildLegendBar(cfg) {
+    const { colors, ticks } = cfg;
+    const n = colors.length;
+    // min/max live in ticks — no separate JSON field needed
+    const min = ticks[0];
+    const max = ticks[n];
+    const totalRange = max - min;
 
-    // Multi-color interpolation (e.g. 3 or 4 colors)
-    const segmentCount = parsed.length - 1;
-    const segment = Math.floor(factor * segmentCount * 0.999);
-    const segmentFactor = (factor * segmentCount) - segment;
-    return interpolate(parsed[segment], parsed[segment + 1], segmentFactor);
+    // Each block is exactly proportional to its tick interval — no edge slivers
+    const stops = colors.flatMap((c, i) => {
+        const loPct = (i / n * 100).toFixed(3);
+        const hiPct = ((i + 1) / n * 100).toFixed(3);
+        return [`${c} ${loPct}%`, `${c} ${hiPct}%`];
+    });
+    const gradient = `linear-gradient(to right, ${colors[0]} 0%, ${stops.join(', ')}, ${colors[n - 1]} 100%)`;
+    return { gradient, ticks };
 }
 
 // 2. Map Initialization
@@ -187,32 +207,30 @@ function updateDashboard() {
 
     const legendTitle = `${varCfg.label} (${varCfg.unit})`;
 
-    // Update UI Elements
+    // ── UNIFIED SCALE: scenario-level min/max, colors, ticks — all from JSON ──
+    const sharedCfg = scenCfg; // colors[], ticks[], min, max all live here
+
+    // Pre-build the legend bar once (shared across all three panels)
+    const { gradient, ticks } = buildLegendBar(sharedCfg);
+
     Object.keys(terms).forEach(key => {
         const titleEl = document.getElementById(terms[key].id);
         titleEl.innerText = `${terms[key].label} ${varCfg.label} ${scenario} ${terms[key].years}`;
 
-        // Per-term scale config: prefer terms[key] if defined, else fall back to top-level scenCfg
-        const termCfg = scenCfg.terms?.[key]
-            ? { ...scenCfg, min: scenCfg.terms[key].min, max: scenCfg.terms[key].max }
-            : scenCfg;
-
-        // Update Choropleth Style
+        // Choropleth: all panels use sharedCfg so colours are directly comparable
         geoLayers[key].eachLayer(layer => {
             const props = layer.feature.properties;
             const lookupKey = `${(props.STATE_UT || "").trim()}|${(props.DISTRICT || "").trim()}`.toLowerCase();
             const dataRow = window.dataLookup[lookupKey];
 
-            // Key format: [json_key]_ssp[126/245/370/585]_[near/mid/long]
             const valKey = `${varCfg.json_key}_${scenario.toLowerCase()}_${key}`;
             const val = dataRow ? dataRow[valKey] : null;
 
             layer.setStyle({
-                fillColor: getColor(val, termCfg),
+                fillColor: getColor(val, sharedCfg),
                 fillOpacity: 0.85
             });
 
-            // Update Tooltip Content with modern formatting and sign for anomalies
             const formattedVal = val !== null ? (val > 0 ? `+${val.toFixed(2)}` : val.toFixed(2)) : 'N/A';
             const tooltipContent = `
                 <div class="district-tooltip">
@@ -229,7 +247,7 @@ function updateDashboard() {
             });
         });
 
-        // Update this term's legend with its own min/max
+        // ── LEGEND: stepped colorbar + ticks at every colour boundary ──
         const legendId = `legend-${key}`;
         const container = document.getElementById(legendId);
         if (!container) return;
@@ -237,16 +255,27 @@ function updateDashboard() {
         const titleEl2 = container.querySelector('.legend-title');
         if (titleEl2) titleEl2.innerText = legendTitle;
 
-        container.querySelector('.legend-scale').style.background =
-            `linear-gradient(to right, ${scenCfg.colors.join(',')})`;
+        const scaleEl = container.querySelector('.legend-scale');
+        if (scaleEl) scaleEl.style.backgroundImage = gradient;
 
-        const minVal = termCfg.min;
-        const maxVal = termCfg.max;
-        const minStr = minVal > 0 ? `+${minVal}` : `${minVal}`;
-        const maxStr = maxVal > 0 ? `+${maxVal}` : `${maxVal}`;
+        // Rebuild tick row (create once, update every call)
+        let ticksEl = container.querySelector('.legend-ticks');
+        if (!ticksEl) {
+            ticksEl = document.createElement('div');
+            ticksEl.className = 'legend-ticks';
+            if (scaleEl) scaleEl.after(ticksEl);
+            else container.appendChild(ticksEl);
+        }
 
-        container.querySelector('span[id$="-min-label"]').innerText = `${minStr} ${varCfg.unit}`;
-        container.querySelector('span[id$="-max-label"]').innerText = `${maxStr} ${varCfg.unit}`;
+        ticksEl.innerHTML = ticks.map((v, i) => {
+            const pct = (i / (ticks.length - 1)) * 100;
+            const label = (v > 0 ? '+' : '') + v.toFixed(1);
+            return `<span class="legend-tick" style="left:${pct.toFixed(2)}%">${label}</span>`;
+        }).join('');
+
+        // Hide the old two-label row (replaced by tick row)
+        const oldLabels = container.querySelector('.legend-labels');
+        if (oldLabels) oldLabels.style.display = 'none';
     });
 }
 

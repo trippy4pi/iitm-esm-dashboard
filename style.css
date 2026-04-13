@@ -213,20 +213,68 @@ main {
 }
 
 .legend-scale {
-    height: 10px;
-    border-radius: 6px;
-    margin-bottom: 0.25rem;
+    height: 14px;
+    border-radius: 2px;
+    margin-bottom: 0;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;
+    background-color: #fff;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    background-clip: padding-box;
+}
+
+/* Tick marks row — absolutely positioned labels below the colorbar */
+.legend-ticks {
+    position: relative;
+    height: 26px;
+    /* enough for short tick line + label text */
+    margin-top: 0;
+    pointer-events: none;
+}
+
+.legend-tick {
+    position: absolute;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    font-size: 0.63rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* Short vertical tick line above the label */
+.legend-tick::before {
+    content: '';
+    display: block;
+    width: 1.5px;
+    height: 5px;
+    background: #475569;
+    margin-bottom: 2px;
+}
+
+/* Clamp the first and last ticks so their labels don't overflow */
+.legend-tick:first-child {
+    transform: translateX(0);
+    align-items: flex-start;
+}
+
+.legend-tick:last-child {
+    transform: translateX(-100%);
+    align-items: flex-end;
 }
 
 .legend-labels {
     display: flex;
     justify-content: space-between;
     font-size: 0.9rem;
-    /* Larger */
     font-weight: 700;
-    /* Bolder */
     color: #000;
-    /* High contrast */
     margin-top: 4px;
 }
 
@@ -1040,6 +1088,10 @@ footer {
 
     .legend-labels {
         font-size: 0.78rem;
+    }
+
+    .legend-tick {
+        font-size: 0.55rem;
     }
 
     /* Footer: clean two-line layout on mobile */
