@@ -40,7 +40,7 @@ python3 -m http.server 8000
 ## Dependencies
 - Leaflet (loaded from CDN in `index.html`). No build step required.
 
-# DATA
+## DATA
 Contact mailto:sarbhukanabhishek@gmail.com for the sample DATA.json file that I used.
 
 ## Contributing
