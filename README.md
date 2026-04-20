@@ -31,7 +31,7 @@ python3 -m http.server 8000
   - `District_VARIABLES.json` — variable metadata for district (labels, units, scenarios, color ramps)
   - `District_DATA.json` — tabular data keyed by state/district
   - `districts_ultra_optimized.geojson` — geometry used for maps of state
-  -  State_VARIABLES.json` — variable metadata for district (labels, units, scenarios, color ramps)
+  -  State_VARIABLES.json — variable metadata for district (labels, units, scenarios, color ramps)
   - `State_DATA.json` — tabular data keyed by state
   - `state_ultra_optimized.geojson` — geometry used for maps of state
 
