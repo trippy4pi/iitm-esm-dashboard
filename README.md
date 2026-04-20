@@ -28,13 +28,16 @@ python3 -m http.server 8000
 - `script.js` — main application logic
 - `assets/` — images and favicon
 - `JSONs/` — data and configuration
-  - `VARIABLES.json` — variable metadata (labels, units, scenarios, color ramps)
-  - `DATA.json` — tabular data keyed by state/district
-  - `districts_ultra_optimized.geojson` — geometry used for maps
+  - `District_VARIABLES.json` — variable metadata for district (labels, units, scenarios, color ramps)
+  - `District_DATA.json` — tabular data keyed by state/district
+  - `districts_ultra_optimized.geojson` — geometry used for maps of state
+  -  State_VARIABLES.json` — variable metadata for district (labels, units, scenarios, color ramps)
+  - `State_DATA.json` — tabular data keyed by state
+  - `state_ultra_optimized.geojson` — geometry used for maps of state
 
 ## Development notes
 - The app expects district matching by both state and district name (see `script.js` where `window.dataLookup` is built using `STATE_UT|DISTRICT`). This helps disambiguate districts with the same name in different states.
-- To add or edit variables, update `JSONs/VARIABLES.json` and adjust color/scale metadata there. `script.js` reads that file on load.
+- To add or edit variables, update `JSONs/District_VARIABLES.json` or `JSONs/State_VARIABLES.json` and adjust color/scale metadata there. `script.js` reads that file on load.
 - Tooltips and legends are generated dynamically in `script.js` — see `updateDashboard()` and the map layer handlers in `initGeoLayers()`.
 
 ## Dependencies
