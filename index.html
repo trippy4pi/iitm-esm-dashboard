@@ -17,119 +17,135 @@
 <body>
     <header>
         <div class="header-inner">
-            <div class="header-left">
+            <div class="header-brand">
                 <div class="logo">
                     <img id="main-logo" src="assets/IITM_Logo.png" alt="IITM Logo">
                 </div>
-                <div class="header-text">
+                <div class="brand-text">
                     <h1>IITM-ESM Climate Projections</h1>
-                    <p class="subtitle">based on Shared Socioeconomic Pathways
-                        <span class="info-tooltip">ⓘ
-                            <span class="tooltip-text" id="ssp-tooltip">
-                                Shared Socioeconomic Pathways (SSPs) are scenarios detailing how global society,
-                                demographics, and economics could evolve through 2100, providing narratives for climate
-                                change research.<br><br>
-                                - IPCC AR6 WG1 Summary for Policymakers, 2021
-                            </span>
-                        </span>
-                    </p>
                 </div>
             </div>
 
-            <!-- Mobile-only toggle button -->
-            <button class="controls-toggle-btn" id="controls-toggle" aria-expanded="false"
-                aria-controls="controls-panel">
-                Variable &amp; Scenario <span class="toggle-icon">▼</span>
-            </button>
+
+
+            <div class="view-toggle-container" id="view-toggle-area">
+                <div class="desktop-only-toggle">
+                    <span class="view-label">Spatial</span>
+                    <label class="classic-switch">
+                        <input type="checkbox" id="view-mode-toggle">
+                        <span class="classic-slider"></span>
+                    </label>
+                    <span class="view-label">Time Series</span>
+                </div>
+                <div class="mobile-only-restricted">
+                    This feature is only available in Desktop. <a href="abcd.efgh" target="_blank">Try it.</a>
+                </div>
+            </div>
+
+            <div class="search-box" id="desktop-search-container">
+                <input type="text" id="district-search" placeholder="Search..." autocomplete="off">
+                <div id="search-results" class="search-results-popup"></div>
+                <button id="clear-search" title="Clear selection">✕</button>
+            </div>
 
             <div class="header-controls" id="controls-panel">
-                <div class="header-actions" role="toolbar" aria-label="Metric selection">
-                    <button class="ctrl-btn" data-metric="precipitation" aria-pressed="false">Precipitation</button>
-                    <button class="ctrl-btn" data-metric="mean_temp" aria-pressed="false">Mean Temperature</button>
-                    <button class="ctrl-btn" data-metric="max_temp" aria-pressed="false">Max Temperature</button>
-                    <button class="ctrl-btn" data-metric="min_temp" aria-pressed="false">Min Temperature</button>
+                <div class="variable-selector">
+                    <select id="metric-select" class="premium-select">
+                        <option value="mean_temp" selected>Mean Temperature</option>
+                        <option value="max_temp">Max Temperature</option>
+                        <option value="min_temp">Min Temperature</option>
+                        <option value="precipitation">Precipitation</option>
+                    </select>
                 </div>
 
-                <div class="scenario-slider" aria-label="SSP scenario selector">
-                    <input id="ssp-range" class="ssp-range" type="range" min="0" max="3" step="1" value="3"
-                        aria-valuemin="0" aria-valuemax="3" aria-valuenow="3">
-                    <div class="ssp-ticks" aria-hidden="true">
-                        <span></span><span></span><span></span><span></span>
-                    </div>
-                    <div class="ssp-labels">
-                        <span class="label-0">SSP126</span>
-                        <span class="label-1">SSP245</span>
-                        <span class="label-2">SSP370</span>
-                        <span class="label-3">SSP585</span>
-                    </div>
+                <div class="scenario-radios" role="radiogroup" aria-label="SSP scenario selection">
+                    <label class="radio-label"><input type="radio" name="ssp" value="0"> <span>SSP126</span></label>
+                    <label class="radio-label"><input type="radio" name="ssp" value="1"> <span>SSP245</span></label>
+                    <label class="radio-label"><input type="radio" name="ssp" value="2"> <span>SSP370</span></label>
+                    <label class="radio-label"><input type="radio" name="ssp" value="3" checked>
+                        <span>SSP585</span></label>
                 </div>
             </div>
         </div>
     </header>
+
+    <!-- Unified Controls Section (Mobile Search/Variable/Slider) -->
+    <section class="controls-section">
+        <div class="controls-inner">
+            <div class="mobile-search-row">
+                <!-- Search box will be moved here by JS if on mobile -->
+                <div class="mobile-variable-dropdown" id="mobile-var-dropdown">
+                    <button class="mobile-var-btn" id="mobile-var-btn" aria-haspopup="listbox">
+                        Variable: <span id="mobile-var-label">tas</span>
+                    </button>
+                    <ul class="mobile-var-list" id="mobile-var-list" role="listbox">
+                        <li data-metric="mean_temp" role="option">Mean Temperature (tas)</li>
+                        <li data-metric="max_temp" role="option">Max Temperature (tasmax)</li>
+                        <li data-metric="min_temp" role="option">Min Temperature (tasmin)</li>
+                        <li data-metric="precipitation" role="option">Precipitation (pr)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mobile-scenario-fixed-container">
+                <!-- Slider will be moved here by JS if on mobile -->
+            </div>
+        </div>
+    </section>
+
     <main>
-        <div id="prev-scenario" class="arrow-btn nav-arrow arrow-left" aria-label="Previous Scenario" tabindex="0"
-            role="button"></div>
         <div class="maps-row">
             <div class="map-container" id="near-term">
                 <div class="map-header" id="near-term-header">Near-term (2025-2036)</div>
                 <div id="map-near-term" class="map-view"></div>
                 <div class="legend" id="legend-near">
                     <div class="legend-title">Legend</div>
-                    <div class="legend-scale"></div>
-                    <div class="legend-labels">
-                        <span id="near-min-label">min</span>
-                        <span id="near-max-label">max</span>
-                    </div>
+                    <div class="legend-scale" id="scale-near"></div>
+                    <div class="legend-ticks" id="ticks-near"></div>
+                    <div class="legend-labels"></div>
                 </div>
             </div>
-
             <div class="map-container" id="mid-term">
                 <div class="map-header" id="mid-term-header">Mid-term (2050-2070)</div>
                 <div id="map-mid-term" class="map-view"></div>
+                <div class="big-rect-placeholder">
+                    <canvas id="time-series-chart"></canvas>
+                    <div id="no-data-overlay" class="no-data-msg">No Data Available</div>
+                </div>
                 <div class="legend" id="legend-mid">
                     <div class="legend-title">Legend</div>
-                    <div class="legend-scale"></div>
-                    <div class="legend-labels">
-                        <span id="mid-min-label">min</span>
-                        <span id="mid-max-label">max</span>
-                    </div>
+                    <div class="legend-scale" id="scale-mid"></div>
+                    <div class="legend-ticks" id="ticks-mid"></div>
+                    <div class="legend-labels"></div>
                 </div>
             </div>
-
             <div class="map-container" id="long-term">
-                <div class="map-header" id="long-term-header">Long-term (2081-2100)</div>
+                <div class="map-header" id="long-term-header">Long-term (2080-2100)</div>
                 <div id="map-long-term" class="map-view"></div>
                 <div class="legend" id="legend-long">
                     <div class="legend-title">Legend</div>
-                    <div class="legend-scale"></div>
-                    <div class="legend-labels">
-                        <span id="long-min-label">min</span>
-                        <span id="long-max-label">max</span>
-                    </div>
+                    <div class="legend-scale" id="scale-long"></div>
+                    <div class="legend-ticks" id="ticks-long"></div>
+                    <div class="legend-labels"></div>
                 </div>
             </div>
-            <!-- Mobile-only: map term switcher — inside maps-row so absolute positioning works -->
-            <div class="mobile-map-nav" aria-label="Switch map term">
-                <button class="mobile-nav-btn mobile-prev" id="mobile-prev-term" aria-label="Previous term"></button>
-                <span class="mobile-ssp-label" id="mobile-term-label">Near-term</span>
-                <button class="mobile-nav-btn mobile-next" id="mobile-next-term" aria-label="Next term"></button>
-            </div>
-        </div>
-        <div id="next-scenario" class="arrow-btn nav-arrow arrow-right" aria-label="Next Scenario" tabindex="0"
-            role="button"></div>
-        <div class="mobile-map-dots" aria-hidden="true">
-            <button class="dot active" data-term="near"></button>
-            <button class="dot" data-term="mid"></button>
-            <button class="dot" data-term="long"></button>
         </div>
     </main>
 
+    <div class="mobile-map-nav">
+        <button class="mobile-nav-btn mobile-prev" id="mobile-prev" aria-label="Previous term"></button>
+        <button class="mobile-nav-btn mobile-next" id="mobile-next" aria-label="Next term"></button>
+    </div>
+
     <footer>
-        <span class="footer-source">Data source: IITM-ESM outputs for Indian Region &bull; 0.25&deg; x 0.25&deg;</span>
-        <span class="footer-desktop-hint">&#128187; Use desktop for best experience</span>
+        <div class="footer-content">
+            Data source: IITM-ESM outputs for Indian Region • 0.25° x 0.25°
+        </div>
     </footer>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="script.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js?v=1.1"></script>
 </body>
 
 </html>
