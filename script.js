@@ -11,8 +11,28 @@ let tsData = null;
 let tsChart = null;
 let tsSeason = 'annual';
 let tsStartYear = 1950;
-let tsEndYear = 2099;
+let tsEndYear = 2100;
 let tsSelectedVar = 'precipitation';
+let tsFullData = null; // Cache for time_series_data.json
+let tsTriggeredByMap = false; // To show red line only on click
+let tsPeriodMeans = {}; // For coloring the map in TS mode
+let tsBaselines = {}; // For anomaly calculation in TS mode
+let tsBarChart = null;
+let tsBarDataItems = []; // For bi-directional sync
+let tsBarSort = 'az'; // Default Alphabetical A-Z
+let tsVisibleStates = new Set(); // For filtering bars
+
+const stateAcronyms = {
+    "ANDHRA PRADESH": "AP", "ARUNACHAL PRADESH": "AR", "ASSAM": "AS", "BIHAR": "BR",
+    "CHANDIGARH": "CH", "CHHATTISGARH": "CG", "DADRA & NAGAR HAVELI & DAMAN & DIU": "DD",
+    "DELHI": "DL", "GOA": "GA", "GUJARAT": "GJ", "HARYANA": "HR", "HIMACHAL PRADESH": "HP",
+    "JAMMU AND KASHMIR": "JK", "JHARKHAND": "JH", "KARNATAKA": "KA", "KERALA": "KL",
+    "LADAKH": "LA", "MADHYA PRADESH": "MP", "MAHARASHTRA": "MH", "MANIPUR": "MN",
+    "MEGHALAYA": "ML", "MIZORAM": "MZ", "NAGALAND": "NL", "ODISHA": "OR",
+    "PUDUCHERRY": "PY", "PUNJAB": "PB", "RAJASTHAN": "RJ", "SIKKIM": "SK",
+    "TAMIL NADU": "TN", "TELANGANA": "TG", "TRIPURA": "TR", "UTTARAKHAND": "UK",
+    "UTTAR PRADESH": "UP", "WEST BENGAL": "WB"
+};
 
 const terms = {
     'near': { id: 'near-term-header', label: 'Near-term', years: '(2025-2036)' },
@@ -258,13 +278,18 @@ function selectFeature(featureKey, panTo = false, triggerSwitch = false) {
 
     // Trigger Time Series Mode on selection (Map Click + State Level only)
     const viewToggle = document.getElementById('view-mode-toggle');
-    if (triggerSwitch && currentLevel === 'state' && viewToggle && !viewToggle.checked) {
-        viewToggle.checked = true;
-        viewToggle.dispatchEvent(new Event('change'));
+    if (triggerSwitch && currentLevel === 'state') {
+        tsTriggeredByMap = true; // Always mark as triggered if via map
+        if (viewToggle && !viewToggle.checked) {
+            viewToggle.checked = true;
+            viewToggle.dispatchEvent(new Event('change'));
+        } else {
+            updateDashboard();
+            syncHover(featureKey, null, true, center);
+        }
     } else {
-        // Just update UI (handles highlights/pan or already-on states)
+        // Search bar or other non-map triggers
         updateDashboard();
-        // Ensure tooltips/styles are applied AFTER dashboard update
         syncHover(featureKey, null, true, center);
     }
 }
@@ -277,26 +302,49 @@ function clearSelection() {
     document.getElementById('clear-search')?.classList.remove('visible');
 }
 
-function syncHover(featureKey, sourceTerm, isOver, latlng) {
+function syncHover(featureKey, sourceTerm, isOver, latlng, source = 'map') {
     Object.keys(terms).forEach(term => {
-        const layer = featureKey ? layersMap[term][featureKey] : null;
-        if (!layer) {
-            Object.values(layersMap[term]).forEach(l => {
+        const layers = layersMap[term];
+        const layer = featureKey ? layers[featureKey] : null;
+
+        if (!isOver || !featureKey) {
+            Object.values(layers).forEach(l => {
                 l.setStyle({ weight: 0.5, color: '#000000' });
                 l.closeTooltip();
             });
-            return;
-        }
-
-        if (isOver) {
+        } else if (layer) {
             layer.setStyle({ weight: 2.2, color: '#000000' });
             if (layer.bringToFront) layer.bringToFront();
             if (latlng) layer.openTooltip(latlng);
-        } else {
-            layer.setStyle({ weight: 0.5, color: '#000000' });
-            layer.closeTooltip();
+            else layer.openTooltip();
         }
     });
+
+    // Bi-directional Sync with Bar Chart
+    if (tsBarChart && source !== 'bar' && document.body.classList.contains('time-series-mode')) {
+        if (isOver && featureKey) {
+            const stateName = featureKey.toUpperCase();
+            const idx = tsBarDataItems.findIndex(item => item.stateName.toUpperCase() === stateName);
+            if (idx !== -1) {
+                // Manually trigger tooltip at bar center if not interactive
+                const meta = tsBarChart.getDatasetMeta(0);
+                const element = meta.data[idx];
+                const rect = tsBarChart.canvas.getBoundingClientRect();
+
+                // Fake mouse positions for the external tooltip logic
+                tsBarChart.canvas._lastMouseX = rect.left + window.pageXOffset + element.x;
+                tsBarChart.canvas._lastMouseY = rect.top + window.pageYOffset + element.y;
+
+                tsBarChart.setActiveElements([{ datasetIndex: 0, index: idx }]);
+                tsBarChart.tooltip.setActiveElements([{ datasetIndex: 0, index: idx }], { x: element.x, y: element.y });
+                tsBarChart.update();
+            }
+        } else {
+            tsBarChart.setActiveElements([]);
+            tsBarChart.tooltip.setActiveElements([], { x: 0, y: 0 });
+            tsBarChart.update();
+        }
+    }
 }
 
 function updateDashboard() {
@@ -315,16 +363,10 @@ function updateDashboard() {
         const hdr = document.getElementById(terms[key].id);
         if (hdr) {
             if (isTimeSeries) {
-                if (key === 'near') hdr.innerText = 'Test Left Frame';
-                else if (key === 'mid') {
-                    let title = 'Test Big Rectangle';
-                    if (lockedFeatureKey) {
-                        const row = window.dataLookup[lockedFeatureKey];
-                        if (row) {
-                            title += ` - ${levelsCfg[currentLevel].tooltipName(row)}`;
-                        }
-                    }
-                    hdr.innerText = title;
+                if (key === 'near') {
+                    hdr.innerText = `${varCfg.label} (${scenario}) Averaged between ${tsStartYear} and ${tsEndYear}`;
+                } else if (key === 'mid') {
+                    // Main chart frame title handled in updateTimeSeriesChart
                 }
             } else {
                 hdr.innerText = `${terms[key].label} ${varCfg.label} ${scenario} ${terms[key].years}`;
@@ -336,15 +378,34 @@ function updateDashboard() {
             const dataRow = window.dataLookup[featureKey];
             const val = dataRow ? dataRow[`${varCfg.json_key}_${scenario.toLowerCase()}_${key}`] : null;
 
-            layer.setStyle({
-                fillColor: getColor(val, scenCfg),
-                fillOpacity: isTimeSeries ? 0 : 1.0,
-                opacity: isTimeSeries ? 0 : 1.0
-            });
-
             if (isTimeSeries) {
-                layer.unbindTooltip();
+                const tsVal = (key === 'near') ? (tsPeriodMeans[featureKey.toUpperCase()] || null) : null;
+                layer.setStyle({
+                    fillColor: getColor(tsVal, scenCfg),
+                    fillOpacity: 1.0,
+                    color: '#000000',
+                    weight: 0.5,
+                    opacity: 1.0
+                });
+
+                const formattedVal = tsVal !== null ? (tsVal > 0 ? `+${tsVal.toFixed(2)}` : tsVal.toFixed(2)) : 'N/A';
+                const name = config.tooltipName(dataRow || { DISTRICT: layer.feature.properties.DISTRICT, STATE_UT: layer.feature.properties.STATE_UT });
+
+                layer.bindTooltip(`
+                    <div class="district-tooltip">
+                        <span class="tooltip-val">${formattedVal} ${varCfg.unit}</span>
+                        <span class="tooltip-dist">${name}</span>
+                        <span class="tooltip-state">${tsStartYear}-${tsEndYear} Mean</span>
+                    </div>
+                `, { sticky: false, direction: 'auto', offset: [0, -10], className: 'custom-tooltip-pane' });
             } else {
+                layer.setStyle({
+                    fillColor: getColor(val, scenCfg),
+                    fillOpacity: 1.0,
+                    color: '#000000',
+                    weight: 0.5,
+                    opacity: 1.0
+                });
                 const formattedVal = val !== null ? (val > 0 ? `+${val.toFixed(2)}` : val.toFixed(2)) : 'N/A';
                 const name = config.tooltipName(dataRow || { DISTRICT: layer.feature.properties.DISTRICT, STATE_UT: layer.feature.properties.STATE_UT });
                 const state = config.tooltipState(dataRow || { STATE_UT: layer.feature.properties.STATE_UT });
@@ -404,56 +465,140 @@ async function updateTimeSeriesChart() {
 
     if (!canvas || !header) return;
 
-    // 1. Initial/Update Header with Controls
-    if (!header.querySelector('.ts-control-group') || tsSelectedVar !== metric) {
-        tsSelectedVar = metric;
-        renderTimeSeriesHeader(header, varCfg.label, scenario);
-    } else {
-        // Sync scenario in title if already rendered
-        const titleScen = header.querySelector('#ts-title-scenario');
-        if (titleScen) titleScen.innerText = `(${scenario})`;
+    // 1. Determine Display State Name for Title
+    let displayStateName = "INDIA";
+    let stateKey = null;
+    if (lockedFeatureKey) {
+        const row = window.dataLookup[lockedFeatureKey];
+        if (row && row.STATE_UT) {
+            stateKey = row.STATE_UT.toUpperCase();
+            displayStateName = row.STATE_UT;
+        }
     }
 
-    // 2. Load Data if needed (or if metric changed)
-    const fileName = `JSONs/${varCfg.json_key}_time_series.json`;
-    try {
-        const resp = await fetch(fileName);
-        if (!resp.ok) throw new Error('File not found');
-        tsData = await resp.json();
-        noDataOverlay.classList.remove('visible');
-    } catch (e) {
-        console.warn(`Time series data missing: ${fileName}`);
-        tsData = null;
+    // 2. Initial/Update Header with Controls
+    const effectiveTitleLoc = (stateKey && tsTriggeredByMap) ? displayStateName : "INDIA";
+    if (!header.querySelector('.ts-control-group') || tsSelectedVar !== metric) {
+        tsSelectedVar = metric;
+        renderTimeSeriesHeader(header, effectiveTitleLoc, varCfg.label, scenario);
+    } else {
+        const titleScen = header.querySelector('#ts-title-scenario');
+        if (titleScen) titleScen.innerText = `(${scenario})`;
+        const titleState = header.querySelector('#ts-title-state');
+        if (titleState) titleState.innerText = effectiveTitleLoc;
+    }
+
+    // 3. Load Unified Data if needed
+    if (!tsFullData) {
+        try {
+            const resp = await fetch('JSONs/time_series_data.json');
+            if (!resp.ok) throw new Error('File not found');
+            const text = await resp.text();
+            const cleanText = text.replace(/: NaN/g, ': null').replace(/: null/g, ': null');
+            tsFullData = JSON.parse(cleanText);
+            noDataOverlay.classList.remove('visible');
+        } catch (e) {
+            console.error('Time series fetch error:', e);
+            noDataOverlay.classList.add('visible');
+            if (tsChart) { tsChart.destroy(); tsChart = null; }
+            return;
+        }
+    }
+
+    // 4. Selection & Data Mapping
+    const jsKey = varCfg.json_key;
+    const scenKey = scenario.toLowerCase();
+    const seasonKey = tsSeason;
+
+    const rawArray = tsFullData[jsKey]?.[seasonKey]?.[scenKey];
+    if (!rawArray || !rawArray.length) {
         noDataOverlay.classList.add('visible');
         if (tsChart) { tsChart.destroy(); tsChart = null; }
         return;
     }
 
-    // 3. Filter & Process Data
-    const dataKey = `${varCfg.json_key}-${scenario.toLowerCase()}-${tsSeason}`;
-    const filtered = tsData.filter(d => d.Year >= tsStartYear && d.Year <= tsEndYear);
-    const labels = filtered.map(d => d.Year);
-    const values = filtered.map(d => d[dataKey]);
+    // 4.5 Calculate Period Means for Map Coloring
+    const filteredRows = rawArray.filter(d => d.year >= tsStartYear && d.year <= tsEndYear);
+    tsPeriodMeans = {};
+    if (filteredRows.length > 0) {
+        // Assume first row has all keys (States)
+        const keys = Object.keys(filteredRows[0]).filter(k => k !== 'year' && k !== 'year_id');
+        keys.forEach(k => {
+            const sum = filteredRows.reduce((acc, row) => acc + (row[k] || 0), 0);
+            tsPeriodMeans[k] = sum / filteredRows.length;
+        });
+    }
 
-    // 4. Render Chart
+    // Trigger map style updates explicitly for TS mode
+    // (This ensures updateDashboard in step 316 can use the new means)
+    Object.keys(terms).forEach(k => {
+        geoLayers[k].eachLayer(layer => {
+            const config = levelsCfg[currentLevel];
+            const featureKey = config.keyGen(layer.feature.properties);
+            const val = tsPeriodMeans[featureKey.toUpperCase()] || null;
+            layer.setStyle({ fillColor: getColor(val, varCfg.scenarios[scenario]) });
+
+            const formattedVal = val !== null ? (val > 0 ? `+${val.toFixed(2)}` : val.toFixed(2)) : 'N/A';
+            const name = config.tooltipName({ DISTRICT: layer.feature.properties.DISTRICT, STATE_UT: layer.feature.properties.STATE_UT });
+            layer.bindTooltip(`
+                <div class="district-tooltip">
+                    <span class="tooltip-val">${formattedVal} ${varCfg.unit}</span>
+                    <span class="tooltip-dist">${name}</span>
+                    <span class="tooltip-state">${tsStartYear}-${tsEndYear} Mean</span>
+                </div>
+            `, { sticky: false, direction: 'auto', offset: [0, -10], className: 'custom-tooltip-pane' });
+        });
+    });
+
+    // 4.6 Sync map header title
+    const nearHdr = document.getElementById('near-term-header');
+    if (nearHdr) {
+        nearHdr.innerText = `${varCfg.label} (${scenario}) Averaged between ${tsStartYear} and ${tsEndYear}`;
+    }
+
+    // Process India Points (Always Green)
+    const indiaPoints = rawArray
+        .filter(d => d.year >= tsStartYear && d.year <= tsEndYear)
+        .map(d => ({ x: d.year, y: d["INDIA"] }))
+        .filter(p => p.y !== null && !isNaN(p.y));
+
+    const datasets = [{
+        label: `INDIA - ${varCfg.label}`,
+        data: indiaPoints,
+        borderColor: '#22c55e', // Green for India
+        borderWidth: 2.2,
+        pointRadius: 0,
+        pointHitRadius: 10,
+        fill: false,
+        tension: 0.1
+    }];
+
+    // Process State Points (Red) if triggered by map
+    if (stateKey && tsTriggeredByMap) {
+        const statePoints = rawArray
+            .filter(d => d.year >= tsStartYear && d.year <= tsEndYear)
+            .map(d => ({ x: d.year, y: d[stateKey] }))
+            .filter(p => p.y !== null && !isNaN(p.y));
+
+        datasets.push({
+            label: `${displayStateName} - ${varCfg.label}`,
+            data: statePoints,
+            borderColor: '#ef4444', // Red for state
+            borderWidth: 2.2,
+            pointRadius: 0,
+            pointHitRadius: 10,
+            fill: false,
+            tension: 0.1
+        });
+    }
+
+    // 5. Render Chart
     if (tsChart) tsChart.destroy();
 
     const ctx = canvas.getContext('2d');
     tsChart = new Chart(ctx, {
         type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: `${varCfg.label} (${scenario})`,
-                data: values,
-                borderColor: '#2563eb',
-                borderWidth: 2,
-                pointRadius: 0,
-                pointHitRadius: 10,
-                fill: false,
-                tension: 0.1
-            }]
-        },
+        data: { datasets: datasets },
         options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -461,12 +606,18 @@ async function updateTimeSeriesChart() {
                 intersect: false,
                 mode: 'index',
             },
+            parsing: {
+                xAxisKey: 'x',
+                yAxisKey: 'y'
+            },
             scales: {
                 x: {
+                    type: 'linear',
                     grid: { display: false },
                     ticks: {
                         color: '#000',
-                        font: { weight: 'normal', size: 10 }
+                        font: { weight: 'normal', size: 10 },
+                        callback: val => val
                     },
                     border: { color: '#000', width: 2 },
                     title: {
@@ -493,7 +644,15 @@ async function updateTimeSeriesChart() {
                 }
             },
             plugins: {
-                legend: { display: false },
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        boxWidth: 12,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
                 tooltip: {
                     enabled: false,
                     position: 'nearest',
@@ -513,21 +672,22 @@ async function updateTimeSeriesChart() {
                         }
 
                         if (tooltipModel.body) {
-                            const year = tooltipModel.title[0];
-                            const raw = parseFloat(tooltipModel.body[0].lines[0].split(': ')[1]);
-                            const prefix = raw > 0 ? '+' : '';
-                            const val = prefix + raw.toFixed(2);
-                            tooltipEl.innerHTML = `
-                                <div class="tooltip-val">${val} ${varCfg.unit}</div>
-                                <div class="tooltip-dist">${year}</div>
-                            `;
+                            const year = tooltipModel.dataPoints[0].raw.x;
+                            let html = "";
+                            tooltipModel.dataPoints.forEach(dp => {
+                                const valStr = (dp.raw.y > 0 ? '+' : '') + dp.raw.y.toFixed(2);
+                                const label = dp.dataset.label.split(' - ')[0];
+                                html += `<div class="tooltip-val" style="color:${dp.dataset.borderColor}">${label}: ${valStr} ${varCfg.unit}</div>`;
+                            });
+                            html += `<div class="tooltip-dist">${year}</div>`;
+                            tooltipEl.innerHTML = html;
                         }
 
                         const position = context.chart.canvas.getBoundingClientRect();
                         tooltipEl.style.opacity = 1;
                         tooltipEl.style.position = 'absolute';
                         tooltipEl.style.left = position.left + window.pageXOffset + tooltipModel.caretX + 'px';
-                        tooltipEl.style.top = position.top + window.pageYOffset + tooltipModel.caretY - 80 + 'px';
+                        tooltipEl.style.top = position.top + window.pageYOffset + tooltipModel.caretY - 100 + 'px';
                         tooltipEl.style.pointerEvents = 'none';
                         tooltipEl.style.transition = 'all 0.05s ease';
                     }
@@ -554,23 +714,172 @@ async function updateTimeSeriesChart() {
             }
         }]
     });
+
+    // 6. Render Bar Chart
+    updateTimeSeriesBarChart(varCfg, scenario);
 }
 
-function renderTimeSeriesHeader(container, varLabel, scenario) {
+function updateTimeSeriesBarChart(varCfg, scenario) {
+    const canvas = document.getElementById('time-series-bar-chart');
+    if (!canvas) return;
+
+    if (tsBarChart) tsBarChart.destroy();
+
+    // Prepare data
+    let items = Object.keys(stateAcronyms)
+        .map(stateName => {
+            const acronym = stateAcronyms[stateName];
+            const val = tsPeriodMeans[stateName.toUpperCase()] || null;
+            return { stateName, acronym, val };
+        })
+        .filter(item => item.val !== null);
+
+    // Filter by selection
+    items = items.filter(item => tsVisibleStates.size === 0 || tsVisibleStates.has(item.stateName));
+
+    // Sorting Logic
+    if (tsBarSort === 'az') items.sort((a, b) => a.acronym.localeCompare(b.acronym));
+    else if (tsBarSort === 'za') items.sort((a, b) => b.acronym.localeCompare(a.acronym));
+    else if (tsBarSort === 'asc') items.sort((a, b) => a.val - b.val);
+    else if (tsBarSort === 'desc') items.sort((a, b) => b.val - a.val);
+
+    tsBarDataItems = items;
+
+    // Decide between Acronyms and Full Names based on count
+    const useFullNames = tsBarDataItems.length <= 10;
+    const labels = tsBarDataItems.map(d => {
+        if (!useFullNames) return d.acronym;
+        // Convert to Title Case for better look
+        return d.stateName.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    });
+    const data = tsBarDataItems.map(d => d.val);
+
+    const ctx = canvas.getContext('2d');
+
+    // Track mouse for pointer-relative tooltip
+    canvas.addEventListener('mousemove', (e) => {
+        canvas._lastMouseX = e.pageX;
+        canvas._lastMouseY = e.pageY;
+    });
+
+    tsBarChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: varCfg.label,
+                data: data,
+                backgroundColor: '#2563eb',
+                borderColor: '#1e3a8a',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            onHover: (evt, elements) => {
+                if (elements.length > 0) {
+                    const idx = elements[0].index;
+                    const stateName = tsBarDataItems[idx].stateName;
+                    const featureKey = Object.keys(window.dataLookup).find(k => k.toUpperCase() === stateName.toUpperCase());
+                    if (featureKey) syncHover(featureKey, null, true, null, 'bar');
+                } else {
+                    syncHover(null, null, false, null, 'bar');
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    enabled: false,
+                    position: 'nearest',
+                    external: function (context) {
+                        let tooltipEl = document.getElementById('chartjs-tooltip');
+                        if (!tooltipEl) {
+                            tooltipEl = document.createElement('div');
+                            tooltipEl.id = 'chartjs-tooltip';
+                            tooltipEl.className = 'district-tooltip ts-custom-tooltip';
+                            document.body.appendChild(tooltipEl);
+                        }
+
+                        const tooltipModel = context.tooltip;
+                        if (tooltipModel.opacity === 0) {
+                            tooltipEl.style.opacity = 0;
+                            return;
+                        }
+
+                        if (tooltipModel.body) {
+                            const dp = tooltipModel.dataPoints[0];
+                            const item = tsBarDataItems[dp.dataIndex];
+                            const valStr = (item.val > 0 ? '+' : '') + item.val.toFixed(2);
+
+                            tooltipEl.innerHTML = `
+                                <div class="tooltip-val" style="color:#2563eb; font-size:1.4rem;">${valStr} ${varCfg.unit}</div>
+                                <div class="tooltip-dist" style="font-weight:850; font-size:1rem;">${item.stateName}</div>
+                                <div class="tooltip-state">${tsStartYear}-${tsEndYear} Average</div>
+                            `;
+                        }
+
+                        tooltipEl.style.opacity = 1;
+                        tooltipEl.style.position = 'absolute';
+                        // Move to current mouse pointer
+                        tooltipEl.style.left = (context.chart.canvas._lastMouseX || 0) + 'px';
+                        tooltipEl.style.top = (context.chart.canvas._lastMouseY || 0) - 100 + 'px';
+                        tooltipEl.style.pointerEvents = 'none';
+                        tooltipEl.style.transition = 'opacity 0.1s ease';
+                    }
+                }
+            },
+            onClick: (evt, elements) => {
+                if (elements.length > 0) {
+                    const idx = elements[0].index;
+                    const stateName = tsBarDataItems[idx].stateName;
+                    const featureKey = Object.keys(window.dataLookup).find(k => k.toUpperCase() === stateName.toUpperCase());
+                    if (featureKey) selectFeature(featureKey, true, true);
+                }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        font: { size: useFullNames ? 10 : 9, weight: 'bold' },
+                        color: '#000'
+                    },
+                    grid: { display: false },
+                    border: { color: '#000', width: 2 }
+                },
+                y: {
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                    border: { color: '#000', width: 2 },
+                    ticks: {
+                        color: '#000',
+                        font: { weight: 'normal', size: 11 }
+                    },
+                    title: {
+                        display: true,
+                        text: `${varCfg.label} (${varCfg.unit})`,
+                        font: { size: 12, weight: 'bold' },
+                        color: '#0f172a'
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderTimeSeriesHeader(container, stateName, varLabel, scenario) {
     const seasons = [
         { id: 'annual', label: 'Annual' },
         { id: 'mam', label: 'MAM (Mar-May)' },
         { id: 'jjas', label: 'JJAS (Jun-Sep)' },
-        { id: 'on', label: 'ON (Oct-Nov)' },
+        { id: 'son', label: 'SON (Sep-Nov)' },
         { id: 'djf', label: 'DJF (Dec-Feb)' }
     ];
 
     const yearOptions = [];
-    for (let y = 1950; y <= 2099; y++) yearOptions.push(y);
+    for (let y = 1950; y <= 2100; y++) yearOptions.push(y);
 
     container.innerHTML = `
         <div class="ts-control-group">
-            Time Series for 
+            Time Series of <span id="ts-title-state">${stateName}</span> for 
             <select class="ts-select" id="ts-season-select">
                 ${seasons.map(s => `<option value="${s.id}" ${tsSeason === s.id ? 'selected' : ''}>${s.label}</option>`).join('')}
             </select>
@@ -673,6 +982,10 @@ function populateSearch() {
             if (isTimeSeries) {
                 // Entering Time Series: Immediate update
                 document.body.classList.add('time-series-mode');
+                // If checking manually (without triggerSwitch), ensure no red line
+                if (!tsTriggeredByMap) {
+                    // Logic to clear potential leftover or just keep it false
+                }
                 updateDashboard();
                 setTimeout(() => {
                     Object.values(mapViews).forEach(m => m.invalidateSize());
@@ -680,6 +993,7 @@ function populateSearch() {
                 }, 750);
             } else {
                 // Exiting Time Series: Sequence the layout first
+                tsTriggeredByMap = false; // Reset when leaving
                 document.body.classList.add('is-animating-spatial');
                 document.body.classList.remove('time-series-mode');
 
@@ -698,6 +1012,80 @@ function populateSearch() {
         });
     }
 
+    // Bar Chart Sort Listener
+    document.getElementById('bar-sort-select')?.addEventListener('change', (e) => {
+        tsBarSort = e.target.value;
+        refreshBarChart();
+    });
+
+    // Bar Chart Filter Setup
+    setupBarFilter();
+
     // Initial load
     load();
 })();
+
+function refreshBarChart() {
+    const metric = window.selectedMetric?.() || 'mean_temp';
+    const scenario = window.selectedScenario?.() || 'SSP585';
+    if (variablesConfig) {
+        updateTimeSeriesBarChart(variablesConfig[metric], scenario);
+    }
+}
+
+function setupBarFilter() {
+    const list = document.getElementById('filter-states-list');
+    const filterAll = document.getElementById('filter-all');
+    const filterBtn = document.getElementById('bar-filter-btn');
+    const filterMenu = document.getElementById('bar-filter-menu');
+    if (!list) return;
+
+    const states = Object.keys(stateAcronyms).sort();
+    tsVisibleStates = new Set(states);
+
+    list.innerHTML = states.map(s => `
+        <label class="filter-option">
+            <input type="checkbox" class="state-filter-check" value="${s}" checked>
+            <span>${s}</span>
+        </label>
+    `).join('');
+
+    const checks = list.querySelectorAll('.state-filter-check');
+
+    const updateCount = () => {
+        const count = tsVisibleStates.size;
+        filterBtn.innerText = count === states.length ? 'Filter States (All)' : `Filter States (${count})`;
+    };
+
+    checks.forEach(chk => {
+        chk.addEventListener('change', () => {
+            if (chk.checked) tsVisibleStates.add(chk.value);
+            else {
+                tsVisibleStates.delete(chk.value);
+                filterAll.checked = false;
+            }
+            updateCount();
+            refreshBarChart();
+        });
+    });
+
+    filterAll?.addEventListener('change', (e) => {
+        const isChecked = e.target.checked;
+        checks.forEach(chk => {
+            chk.checked = isChecked;
+            if (isChecked) tsVisibleStates.add(chk.value);
+            else tsVisibleStates.delete(chk.value);
+        });
+        updateCount();
+        refreshBarChart();
+    });
+
+    filterBtn?.addEventListener('click', (e) => {
+        filterMenu.classList.toggle('visible');
+        e.stopPropagation();
+    });
+
+    document.addEventListener('click', (e) => {
+        if (filterMenu && !filterMenu.contains(e.target)) filterMenu.classList.remove('visible');
+    });
+}

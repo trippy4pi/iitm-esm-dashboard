@@ -109,7 +109,32 @@
                 <div class="map-header" id="mid-term-header">Mid-term (2050-2070)</div>
                 <div id="map-mid-term" class="map-view"></div>
                 <div class="big-rect-placeholder">
-                    <canvas id="time-series-chart"></canvas>
+                    <div class="ts-window ts-window-line">
+                        <canvas id="time-series-chart"></canvas>
+                    </div>
+                    <div class="ts-window ts-window-bar">
+                        <div class="map-header" id="bar-graph-header">
+                            <span>Bar Graph</span>
+                            <div class="bar-controls-right">
+                                <div class="bar-filter-container">
+                                    <button id="bar-filter-btn" class="bar-filter-btn">Filter States (All)</button>
+                                    <div id="bar-filter-menu" class="bar-filter-menu">
+                                        <label class="filter-option"><input type="checkbox" id="filter-all" checked>
+                                            <span>ALL STATES</span></label>
+                                        <div class="filter-divider"></div>
+                                        <div id="filter-states-list" class="filter-states-list"></div>
+                                    </div>
+                                </div>
+                                <select id="bar-sort-select" class="bar-sort-dropdown">
+                                    <option value="az">Alphabetical A-Z</option>
+                                    <option value="za">Alphabetical Z-A</option>
+                                    <option value="asc">Low to High</option>
+                                    <option value="desc">High to Low</option>
+                                </select>
+                            </div>
+                        </div>
+                        <canvas id="time-series-bar-chart"></canvas>
+                    </div>
                     <div id="no-data-overlay" class="no-data-msg">No Data Available</div>
                 </div>
                 <div class="legend" id="legend-mid">
