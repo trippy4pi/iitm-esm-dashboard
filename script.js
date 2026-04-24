@@ -10,8 +10,8 @@ let lockedFeatureKey = null;
 let tsData = null;
 let tsChart = null;
 let tsSeason = 'annual';
-let tsStartYear = 1950;
-let tsEndYear = 2100;
+let tsStartYear = 2015;
+let tsEndYear = 2099;
 let tsSelectedVar = 'precipitation';
 let tsFullData = null; // Cache for time_series_data.json
 let tsTriggeredByMap = false; // To show red line only on click
@@ -37,7 +37,7 @@ const stateAcronyms = {
 const terms = {
     'near': { id: 'near-term-header', label: 'Near-term', years: '(2025-2036)' },
     'mid': { id: 'mid-term-header', label: 'Mid-term', years: '(2050-2070)' },
-    'long': { id: 'long-term-header', label: 'Long-term', years: '(2081-2100)' }
+    'long': { id: 'long-term-header', label: 'Long-term', years: '(2081-2099)' }
 };
 
 // Level configurations
@@ -592,6 +592,27 @@ async function updateTimeSeriesChart() {
         });
     }
 
+    // 4.7 Calculate Unified Y-Axis Limits (Anchored to SSP585 for comparison)
+    let yMin = null, yMax = null;
+    const ssp585Array = tsFullData[jsKey]?.[seasonKey]?.['ssp585'];
+    if (ssp585Array) {
+        let allVals = [];
+        const process = (arr) => arr.filter(d => d.year >= tsStartYear && d.year <= tsEndYear).forEach(d => {
+            if (d["INDIA"] !== null && !isNaN(d["INDIA"])) allVals.push(d["INDIA"]);
+            if (stateKey && tsTriggeredByMap && d[stateKey] !== null && !isNaN(d[stateKey])) allVals.push(d[stateKey]);
+        });
+        process(ssp585Array);
+        process(rawArray); // Include current scenario to avoid clipping
+
+        if (allVals.length > 0) {
+            const min = Math.min(...allVals);
+            const max = Math.max(...allVals);
+            const pad = (max - min) * 0.08 || 0.1;
+            yMin = min - pad;
+            yMax = max + pad;
+        }
+    }
+
     // 5. Render Chart
     if (tsChart) tsChart.destroy();
 
@@ -634,7 +655,8 @@ async function updateTimeSeriesChart() {
                         font: { weight: 'normal', size: 11 }
                     },
                     border: { color: '#000', width: 2 },
-                    suggestedMin: 0,
+                    suggestedMin: yMin !== null ? Math.min(0, yMin) : 0,
+                    suggestedMax: yMax !== null ? yMax : undefined,
                     title: {
                         display: true,
                         text: `${varCfg.label} (${varCfg.unit})`,
@@ -754,6 +776,28 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
     });
     const data = tsBarDataItems.map(d => d.val);
 
+    // Calculate anchored Y-limits based on SSP585 (state-level averages)
+    let barYMin = null, barYMax = null;
+    const ssp585Array = tsFullData[varCfg.json_key]?.[tsSeason]?.['ssp585'];
+    if (ssp585Array) {
+        const ssp585Filtered = ssp585Array.filter(d => d.year >= tsStartYear && d.year <= tsEndYear);
+        if (ssp585Filtered.length > 0) {
+            const keys = Object.keys(ssp585Filtered[0]).filter(k => k !== 'year' && k !== 'year_id');
+            let ssp585Means = [];
+            keys.forEach(k => {
+                const vals = ssp585Filtered.map(r => r[k]).filter(v => v !== null && !isNaN(v));
+                if (vals.length > 0) ssp585Means.push(vals.reduce((a, b) => a + b, 0) / vals.length);
+            });
+
+            const combined = [...ssp585Means, ...data];
+            const min = Math.min(...combined);
+            const max = Math.max(...combined);
+            const pad = (max - min) * 0.08 || 0.1;
+            barYMin = min - pad;
+            barYMax = max + pad;
+        }
+    }
+
     const ctx = canvas.getContext('2d');
 
     // Track mouse for pointer-relative tooltip
@@ -849,6 +893,8 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
                 y: {
                     grid: { color: 'rgba(0,0,0,0.05)' },
                     border: { color: '#000', width: 2 },
+                    suggestedMin: barYMin !== null ? Math.min(0, barYMin) : 0,
+                    suggestedMax: barYMax !== null ? barYMax : undefined,
                     ticks: {
                         color: '#000',
                         font: { weight: 'normal', size: 11 }
@@ -875,7 +921,7 @@ function renderTimeSeriesHeader(container, stateName, varLabel, scenario) {
     ];
 
     const yearOptions = [];
-    for (let y = 1950; y <= 2100; y++) yearOptions.push(y);
+    for (let y = 2015; y <= 2099; y++) yearOptions.push(y);
 
     container.innerHTML = `
         <div class="ts-control-group">
