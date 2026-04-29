@@ -11,11 +11,12 @@
         rel="stylesheet">
     <title>IITM-ESM Dashboard</title>
     <link rel="icon" type="image/x-icon" href="assets/favicon.png">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=1.5">
 </head>
 
 <body>
     <header>
+        <div class="header-atmosphere"></div>
         <div class="header-inner">
             <div class="header-brand">
                 <div class="logo">
@@ -37,13 +38,16 @@
                     </label>
                     <span class="view-label">Time Series</span>
                 </div>
-                <div class="mobile-only-restricted">
-                    This feature is only available in Desktop. <a href="abcd.efgh" target="_blank">Try it.</a>
-                </div>
             </div>
 
             <div class="search-box" id="desktop-search-container">
-                <input type="text" id="district-search" placeholder="Search..." autocomplete="off">
+                <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                    viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.3-4.3" />
+                </svg>
+                <input type="text" id="district-search" placeholder="Search District..." autocomplete="off">
                 <div id="search-results" class="search-results-popup"></div>
                 <button id="clear-search" title="Clear selection">✕</button>
             </div>
@@ -69,31 +73,14 @@
         </div>
     </header>
 
-    <!-- Unified Controls Section (Mobile Search/Variable/Slider) -->
-    <section class="controls-section">
-        <div class="controls-inner">
-            <div class="mobile-search-row">
-                <!-- Search box will be moved here by JS if on mobile -->
-                <div class="mobile-variable-dropdown" id="mobile-var-dropdown">
-                    <button class="mobile-var-btn" id="mobile-var-btn" aria-haspopup="listbox">
-                        Variable: <span id="mobile-var-label">tas</span>
-                    </button>
-                    <ul class="mobile-var-list" id="mobile-var-list" role="listbox">
-                        <li data-metric="mean_temp" role="option">Mean Temperature (tas)</li>
-                        <li data-metric="max_temp" role="option">Max Temperature (tasmax)</li>
-                        <li data-metric="min_temp" role="option">Min Temperature (tasmin)</li>
-                        <li data-metric="precipitation" role="option">Precipitation (pr)</li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="mobile-scenario-fixed-container">
-                <!-- Slider will be moved here by JS if on mobile -->
-            </div>
-        </div>
-    </section>
 
     <main>
+        <div class="atmosphere-layer" id="atmosphere">
+            <div class="plasma-blob blob-1"></div>
+            <div class="plasma-blob blob-2"></div>
+            <div class="plasma-blob blob-3"></div>
+            <div class="plasma-blob blob-4"></div>
+        </div>
         <div class="maps-row">
             <div class="map-container" id="near-term">
                 <div class="map-header" id="near-term-header">Near-term (2025-2036)</div>
@@ -119,9 +106,6 @@
                                 <div class="bar-filter-container">
                                     <button id="bar-filter-btn" class="bar-filter-btn">Filter States (All)</button>
                                     <div id="bar-filter-menu" class="bar-filter-menu">
-                                        <label class="filter-option"><input type="checkbox" id="filter-all" checked>
-                                            <span>ALL STATES</span></label>
-                                        <div class="filter-divider"></div>
                                         <div id="filter-states-list" class="filter-states-list"></div>
                                     </div>
                                 </div>
@@ -157,20 +141,30 @@
         </div>
     </main>
 
-    <div class="mobile-map-nav">
-        <button class="mobile-nav-btn mobile-prev" id="mobile-prev" aria-label="Previous term"></button>
-        <button class="mobile-nav-btn mobile-next" id="mobile-next" aria-label="Next term"></button>
-    </div>
 
     <footer>
-        <div class="footer-content">
-            Data source: IITM-ESM outputs for Indian Region • 0.25° x 0.25°
+        <div class="footer-inner">
+            <div class="footer-left">
+                Data source: IITM-ESM outputs for Indian Region • 0.25° x 0.25°
+            </div>
+            <div class="footer-mid">
+                &copy; 2026 ESM Group All Rights Reserved
+            </div>
+            <div class="footer-right">
+                <span>Designed by Abhishek B. Sarbhukan</span>
+                <a href="https://github.com/trippy4pi" target="_blank" title="View Github Profile" class="github-link">
+                    <svg viewBox="0 0 24 24" class="github-icon">
+                        <path
+                            d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.041-1.416-4.041-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                    </svg>
+                </a>
+            </div>
         </div>
     </footer>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="script.js?v=1.1"></script>
+    <script src="script.js?v=1.5"></script>
 </body>
 
 </html>

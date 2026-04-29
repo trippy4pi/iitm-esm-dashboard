@@ -1,0 +1,135 @@
+/* Year Picker Component */
+.year-picker-container {
+    position: relative;
+    display: inline-block;
+}
+
+.year-picker-btn {
+    appearance: none;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    color: #0f172a;
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 850;
+    padding: 2px 10px;
+    cursor: pointer;
+    min-width: 60px;
+    text-align: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.year-picker-btn:hover {
+    border-color: #94a3b8;
+    background: #f8fafc;
+}
+
+.year-picker-popup {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ffffff;
+    border: 1px solid #000;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+    z-index: 12000;
+    width: 280px;
+    display: none;
+    animation: picker-bloom 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes picker-bloom {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1);
+    }
+}
+
+.year-picker-popup.visible {
+    display: block;
+}
+
+.picker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.picker-header span {
+    font-size: 0.7rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+}
+
+.year-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    max-height: 220px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.year-cell {
+    border: none;
+    background: transparent;
+    padding: 6px 4px;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 850;
+    color: #000000;
+    /* Bold and Black */
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+    text-align: center;
+}
+
+.year-cell:hover:not(.disabled) {
+    background: #f1f5f9;
+    color: #2563eb;
+}
+
+.year-cell.active {
+    background: #0f172a;
+    color: #ffffff !important;
+}
+
+.year-cell.disabled {
+    color: #cbd5e1;
+    /* Greyish */
+    cursor: not-allowed;
+    font-weight: 500;
+}
+
+.year-cell.in-range {
+    background: rgba(37, 99, 235, 0.1);
+}
+
+/* Scrollbar styling for grid */
+.year-grid::-webkit-scrollbar {
+    width: 4px;
+}
+
+.year-grid::-webkit-scrollbar-track {
+    background: #f8fafc;
+}
+
+.year-grid::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}

@@ -49,9 +49,9 @@ const levelsCfg = {
         keyGen: (props) => `${(props.STATE_UT || "").trim()}|${(props.DISTRICT || "").trim()}`.toLowerCase(),
         rowKeyGen: (row) => `${row.STATE_UT.trim()}|${row.DISTRICT.trim()}`.toLowerCase(),
         placeholder: 'Search District...',
-        tooltipName: (row) => row.DISTRICT,
+        tooltipName: (row) => (row.DISTRICT || "").toUpperCase(),
         tooltipState: (row) => row.STATE_UT,
-        searchLabel: (row) => row.DISTRICT,
+        searchLabel: (row) => (row.DISTRICT || "").toUpperCase(),
         searchSub: (row) => row.STATE_UT
     },
     state: {
@@ -112,10 +112,8 @@ function buildLegendBar(cfg) {
 
 // Map Initialization
 (() => {
-    const w = window.innerWidth;
-    const isMobile = w <= 768;
-    const startZoom = isMobile ? (w < 400 ? 3.4 : 3.6) : 4.5;
-    const center = isMobile ? [22.5, 82.5] : [22.9734, 82.5];
+    const startZoom = 4.5;
+    const center = [22.9734, 82.5];
     const tileUrl = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 
     // Define custom level switcher control class using the 3D Soap Slider
@@ -162,7 +160,7 @@ function buildLegendBar(cfg) {
         const m = L.map(id, {
             zoomControl: false,
             attributionControl: true,
-            minZoom: isMobile ? 3 : 4,
+            minZoom: 4,
             maxZoom: 8,
             zoomSnap: 0.1
         }).setView(center, startZoom);
@@ -258,7 +256,7 @@ function initGeoLayers() {
     });
 }
 
-function selectFeature(featureKey, panTo = false, triggerSwitch = false) {
+async function selectFeature(featureKey, panTo = false, triggerSwitch = false) {
     if (lockedFeatureKey) syncHover(lockedFeatureKey, null, false);
     lockedFeatureKey = featureKey;
     const layer = layersMap['near'][featureKey];
@@ -276,20 +274,26 @@ function selectFeature(featureKey, panTo = false, triggerSwitch = false) {
         document.getElementById('clear-search')?.classList.add('visible');
     }
 
-    // Trigger Time Series Mode on selection (Map Click + State Level only)
+    // Handle Search/Selection Effect based on Mode
+    const isTimeSeries = document.body.classList.contains('time-series-mode');
     const viewToggle = document.getElementById('view-mode-toggle');
+
     if (triggerSwitch && currentLevel === 'state') {
-        tsTriggeredByMap = true; // Always mark as triggered if via map
+        tsTriggeredByMap = true;
         if (viewToggle && !viewToggle.checked) {
             viewToggle.checked = true;
             viewToggle.dispatchEvent(new Event('change'));
         } else {
-            updateDashboard();
+            await updateDashboard();
             syncHover(featureKey, null, true, center);
         }
     } else {
-        // Search bar or other non-map triggers
-        updateDashboard();
+        if (isTimeSeries && currentLevel === 'state') {
+            tsTriggeredByMap = true;
+        }
+
+        await updateDashboard();
+        // Fully restore map highlighting and tooltips on search
         syncHover(featureKey, null, true, center);
     }
 }
@@ -297,9 +301,18 @@ function selectFeature(featureKey, panTo = false, triggerSwitch = false) {
 function clearSelection() {
     if (lockedFeatureKey) syncHover(lockedFeatureKey, null, false);
     lockedFeatureKey = null;
+    tsTriggeredByMap = false; // Hide the state-specific trend line
+
     const input = document.getElementById('district-search');
     if (input) input.value = '';
     document.getElementById('clear-search')?.classList.remove('visible');
+
+    // Recalibrate Maps to default India view
+    Object.values(mapViews).forEach(m => {
+        m.setView([22.9734, 82.5], 4.5, { animate: true });
+    });
+
+    updateDashboard();
 }
 
 function syncHover(featureKey, sourceTerm, isOver, latlng, source = 'map') {
@@ -347,11 +360,62 @@ function syncHover(featureKey, sourceTerm, isOver, latlng, source = 'map') {
     }
 }
 
-function updateDashboard() {
+async function updateDashboard() {
     if (!variablesConfig || !datasetJSON) return;
-    const isTimeSeries = document.body.classList.contains('time-series-mode');
+
     const metric = window.selectedMetric?.() || 'mean_temp';
     const scenario = window.selectedScenario?.() || 'SSP585';
+
+    const mainEl = document.querySelector('main');
+    const atmosConfig = {
+        'SSP126': { p: 'rgba(0, 255, 0, 0.7)', s: 'rgba(0, 255, 0, 0.67)' },  // Literal Green
+        'SSP245': { p: 'rgba(255, 255, 0, 0.7)', s: 'rgba(255, 255, 0, 0.67)' },   // Literal Yellow
+        'SSP370': { p: 'rgba(255, 165, 0, 0.7)', s: 'rgba(255, 165, 0, 0.67)' },  // Literal Orange
+        'SSP585': { p: 'rgba(255, 0, 0, 0.7)', s: 'rgba(255, 0, 0, 0.67)' }   // Literal Red
+    };
+
+    if (mainEl && atmosConfig[scenario]) {
+        mainEl.style.setProperty('--plasma-1', atmosConfig[scenario].p);
+        mainEl.style.setProperty('--plasma-2', atmosConfig[scenario].s);
+
+        const baseColors = {
+            'SSP126': 'rgba(34, 197, 94, 1)',
+            'SSP245': 'rgba(234, 179, 8, 1)',
+            'SSP370': 'rgba(249, 115, 22, 1)',
+            'SSP585': 'rgba(239, 68, 68, 1)'
+        };
+
+        const baseColor = baseColors[scenario];
+
+        document.documentElement.style.setProperty('--header-bleed', baseColor.replace('1)', '0.06)'));
+        document.documentElement.style.setProperty('--button-bleed', baseColor.replace('1)', '0.10)'));
+        document.documentElement.style.setProperty('--legend-bleed', baseColor.replace('1)', '0.04)'));
+        document.documentElement.style.setProperty('--container-bleed', 'transparent');
+        document.documentElement.style.setProperty('--border-bleed', baseColor.replace('1)', '0.70)'));
+        document.documentElement.style.setProperty('--glow-bleed', baseColor.replace('1)', '0.15)'));
+
+        const hdr = document.querySelector('header');
+        if (hdr) {
+            hdr.classList.remove('flare-active');
+            void hdr.offsetWidth; // Force Reflow
+            document.documentElement.style.setProperty('--header-flare-color', baseColor.replace('1)', '0.80)'));
+            hdr.classList.add('flare-active');
+        }
+    }
+
+    const isTimeSeries = document.body.classList.contains('time-series-mode');
+
+    // Consolidate Time Series logic: Move data prep to beginning
+    if (isTimeSeries) {
+        // Force State level for TS mode as requested
+        if (currentLevel !== 'state') {
+            currentLevel = 'state';
+            load(); // This will re-trigger updateDashboard
+            return;
+        }
+        await updateTimeSeriesChart();
+    }
+
     const varCfg = variablesConfig[metric];
     const scenCfg = varCfg?.scenarios[scenario];
     if (!scenCfg) return;
@@ -365,8 +429,6 @@ function updateDashboard() {
             if (isTimeSeries) {
                 if (key === 'near') {
                     hdr.innerText = `${varCfg.label} (${scenario}) Averaged between ${tsStartYear} and ${tsEndYear}`;
-                } else if (key === 'mid') {
-                    // Main chart frame title handled in updateTimeSeriesChart
                 }
             } else {
                 hdr.innerText = `${terms[key].label} ${varCfg.label} ${scenario} ${terms[key].years}`;
@@ -376,7 +438,6 @@ function updateDashboard() {
         geoLayers[key].eachLayer(layer => {
             const featureKey = config.keyGen(layer.feature.properties);
             const dataRow = window.dataLookup[featureKey];
-            const val = dataRow ? dataRow[`${varCfg.json_key}_${scenario.toLowerCase()}_${key}`] : null;
 
             if (isTimeSeries) {
                 const tsVal = (key === 'near') ? (tsPeriodMeans[featureKey.toUpperCase()] || null) : null;
@@ -399,6 +460,7 @@ function updateDashboard() {
                     </div>
                 `, { sticky: false, direction: 'auto', offset: [0, -10], className: 'custom-tooltip-pane' });
             } else {
+                const val = dataRow ? dataRow[`${varCfg.json_key}_${scenario.toLowerCase()}_${key}`] : null;
                 layer.setStyle({
                     fillColor: getColor(val, scenCfg),
                     fillOpacity: 1.0,
@@ -446,11 +508,6 @@ function updateDashboard() {
         const old = container.querySelector('.legend-labels');
         if (old) old.style.display = 'none';
     });
-
-    // Update Time Series components if active
-    if (isTimeSeries) {
-        updateTimeSeriesChart();
-    }
 }
 
 async function updateTimeSeriesChart() {
@@ -493,9 +550,7 @@ async function updateTimeSeriesChart() {
         try {
             const resp = await fetch('JSONs/time_series_data.json');
             if (!resp.ok) throw new Error('File not found');
-            const text = await resp.text();
-            const cleanText = text.replace(/: NaN/g, ': null').replace(/: null/g, ': null');
-            tsFullData = JSON.parse(cleanText);
+            tsFullData = await resp.json();
             noDataOverlay.classList.remove('visible');
         } catch (e) {
             console.error('Time series fetch error:', e);
@@ -529,27 +584,6 @@ async function updateTimeSeriesChart() {
         });
     }
 
-    // Trigger map style updates explicitly for TS mode
-    // (This ensures updateDashboard in step 316 can use the new means)
-    Object.keys(terms).forEach(k => {
-        geoLayers[k].eachLayer(layer => {
-            const config = levelsCfg[currentLevel];
-            const featureKey = config.keyGen(layer.feature.properties);
-            const val = tsPeriodMeans[featureKey.toUpperCase()] || null;
-            layer.setStyle({ fillColor: getColor(val, varCfg.scenarios[scenario]) });
-
-            const formattedVal = val !== null ? (val > 0 ? `+${val.toFixed(2)}` : val.toFixed(2)) : 'N/A';
-            const name = config.tooltipName({ DISTRICT: layer.feature.properties.DISTRICT, STATE_UT: layer.feature.properties.STATE_UT });
-            layer.bindTooltip(`
-                <div class="district-tooltip">
-                    <span class="tooltip-val">${formattedVal} ${varCfg.unit}</span>
-                    <span class="tooltip-dist">${name}</span>
-                    <span class="tooltip-state">${tsStartYear}-${tsEndYear} Mean</span>
-                </div>
-            `, { sticky: false, direction: 'auto', offset: [0, -10], className: 'custom-tooltip-pane' });
-        });
-    });
-
     // 4.6 Sync map header title
     const nearHdr = document.getElementById('near-term-header');
     if (nearHdr) {
@@ -562,67 +596,112 @@ async function updateTimeSeriesChart() {
         .map(d => ({ x: d.year, y: d["INDIA"] }))
         .filter(p => p.y !== null && !isNaN(p.y));
 
-    const datasets = [{
-        label: `INDIA - ${varCfg.label}`,
-        data: indiaPoints,
-        borderColor: '#22c55e', // Green for India
-        borderWidth: 2.2,
-        pointRadius: 0,
-        pointHitRadius: 10,
-        fill: false,
-        tension: 0.1
-    }];
+    const hasStateSelection = (stateKey && tsTriggeredByMap);
+    const datasets = [];
 
-    // Process State Points (Red) if triggered by map
-    if (stateKey && tsTriggeredByMap) {
+    if (hasStateSelection) {
         const statePoints = rawArray
             .filter(d => d.year >= tsStartYear && d.year <= tsEndYear)
             .map(d => ({ x: d.year, y: d[stateKey] }))
             .filter(p => p.y !== null && !isNaN(p.y));
 
         datasets.push({
-            label: `${displayStateName} - ${varCfg.label}`,
+            label: displayStateName.toUpperCase(),
             data: statePoints,
-            borderColor: '#ef4444', // Red for state
-            borderWidth: 2.2,
-            pointRadius: 0,
+            borderColor: '#ef4444',
+            borderWidth: 3,
+            pointRadius: 3,
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: '#ef4444',
+            pointBorderWidth: 2.5,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: '#ef4444',
+            pointHoverBorderColor: '#ffffff',
+            pointHoverBorderWidth: 2,
             pointHitRadius: 10,
             fill: false,
-            tension: 0.1
+            tension: 0.4,
+            order: 1
         });
     }
 
-    // 4.7 Calculate Unified Y-Axis Limits (Anchored to SSP585 for comparison)
-    let yMin = null, yMax = null;
-    const ssp585Array = tsFullData[jsKey]?.[seasonKey]?.['ssp585'];
-    if (ssp585Array) {
-        let allVals = [];
-        const process = (arr) => arr.filter(d => d.year >= tsStartYear && d.year <= tsEndYear).forEach(d => {
-            if (d["INDIA"] !== null && !isNaN(d["INDIA"])) allVals.push(d["INDIA"]);
-            if (stateKey && tsTriggeredByMap && d[stateKey] !== null && !isNaN(d[stateKey])) allVals.push(d[stateKey]);
-        });
-        process(ssp585Array);
-        process(rawArray); // Include current scenario to avoid clipping
+    datasets.push({
+        label: `INDIA`,
+        data: indiaPoints,
+        borderColor: '#22c55e',
+        borderWidth: 3,
+        pointRadius: hasStateSelection ? 0 : 3,
+        pointBackgroundColor: '#ffffff',
+        pointBorderColor: '#22c55e',
+        pointBorderWidth: 2.5,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: '#22c55e',
+        pointHoverBorderColor: '#ffffff',
+        pointHoverBorderWidth: 2,
+        pointHitRadius: 10,
+        fill: false,
+        tension: 0.4,
+        order: 2
+    });
 
-        if (allVals.length > 0) {
-            const min = Math.min(...allVals);
-            const max = Math.max(...allVals);
-            const pad = (max - min) * 0.08 || 0.1;
-            yMin = min - pad;
-            yMax = max + pad;
+    // 4.7 Calculate Unified Y-Axis Limits (Global across all scenarios for comparison)
+    let yMin = null, yMax = null;
+    const scenariosToPulse = ['ssp126', 'ssp245', 'ssp370', 'ssp585'];
+    let allVals = [];
+
+    scenariosToPulse.forEach(scen => {
+        const scenData = tsFullData[jsKey]?.[seasonKey]?.[scen];
+        if (scenData) {
+            scenData.filter(d => d.year >= tsStartYear && d.year <= tsEndYear).forEach(d => {
+                if (d["INDIA"] !== null && !isNaN(d["INDIA"])) allVals.push(d["INDIA"]);
+                if (stateKey && tsTriggeredByMap && d[stateKey] !== null && !isNaN(d[stateKey])) allVals.push(d[stateKey]);
+            });
         }
+    });
+
+    if (allVals.length > 0) {
+        const min = Math.min(...allVals);
+        const max = Math.max(...allVals);
+        const pad = (max - min) * 0.12 || 0.1;
+        yMin = min - pad;
+        yMax = max + pad;
     }
 
     // 5. Render Chart
     if (tsChart) tsChart.destroy();
 
     const ctx = canvas.getContext('2d');
+
     tsChart = new Chart(ctx, {
         type: 'line',
         data: { datasets: datasets },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: {
+                x: {
+                    type: 'number',
+                    easing: 'linear',
+                    duration: 15, // Delay per point
+                    from: NaN,
+                    delay(ctx) {
+                        if (ctx.type !== 'data' || ctx.xStarted) return 0;
+                        ctx.xStarted = true;
+                        return ctx.index * 15;
+                    }
+                },
+                y: {
+                    type: 'number',
+                    easing: 'linear',
+                    duration: 15,
+                    from: (ctx) => ctx.index === 0 ? ctx.chart.scales.y.getPixelForValue(0) : ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.index - 1].getProps(['y'], true).y,
+                    delay(ctx) {
+                        if (ctx.type !== 'data' || ctx.yStarted) return 0;
+                        ctx.yStarted = true;
+                        return ctx.index * 15;
+                    }
+                }
+            },
             interaction: {
                 intersect: false,
                 mode: 'index',
@@ -636,43 +715,87 @@ async function updateTimeSeriesChart() {
                     type: 'linear',
                     grid: { display: false },
                     ticks: {
-                        color: '#000',
-                        font: { weight: 'normal', size: 10 },
+                        color: '#000000',
+                        font: { weight: '750', size: 12 },
                         callback: val => val
                     },
-                    border: { color: '#000', width: 2 },
+                    border: { display: false },
                     title: {
                         display: true,
                         text: 'Year',
-                        color: '#0f172a',
-                        font: { weight: 'bold', size: 12 }
+                        color: '#000000',
+                        font: { weight: '800', size: 14 }
                     }
                 },
                 y: {
-                    grid: { color: 'rgba(0,0,0,0.05)' },
-                    ticks: {
-                        color: '#000',
-                        font: { weight: 'normal', size: 11 }
+                    grid: {
+                        color: (context) => context.tick.value === 0 ? '#000000' : 'rgba(0,0,0,0.03)',
+                        lineWidth: (context) => (context.tick.value === 0) ? 1 : 1,
+                        drawTicks: false
                     },
-                    border: { color: '#000', width: 2 },
+                    ticks: {
+                        color: '#000000',
+                        font: { weight: '750', size: 12 },
+                        padding: 8
+                    },
+                    border: { display: true, color: '#000000', width: 2 },
                     suggestedMin: yMin !== null ? Math.min(0, yMin) : 0,
                     suggestedMax: yMax !== null ? yMax : undefined,
                     title: {
                         display: true,
                         text: `${varCfg.label} (${varCfg.unit})`,
-                        color: '#0f172a',
-                        font: { weight: 'bold', size: 12 }
+                        color: '#000000',
+                        font: { weight: '900', size: 16 },
+                        padding: 15
                     }
                 }
+            },
+            layout: {
+                padding: { top: 0, bottom: 0, left: 0, right: 0 }
             },
             plugins: {
                 legend: {
                     display: true,
                     position: 'top',
+                    align: 'center', // Center them but with a large gap
+                    onClick: (e, legendItem, legend) => {
+                        const index = legendItem.index;
+                        const ci = legend.chart;
+                        if (ci.isDatasetVisible(index)) {
+                            ci.hide(index);
+                        } else {
+                            ci.show(index);
+                        }
+                    },
                     labels: {
                         boxWidth: 12,
+                        boxHeight: 12,
                         usePointStyle: true,
-                        pointStyle: 'circle'
+                        pointStyle: 'rectRounded',
+                        padding: 10,
+                        font: {
+                            size: 14,
+                            weight: '850', // Heavier weight as in image
+                            family: "'Outfit', sans-serif"
+                        },
+                        generateLabels: (chart) => {
+                            const datasets = chart.data.datasets;
+                            return datasets.map((ds, i) => {
+                                const isVisible = chart.isDatasetVisible(i);
+                                // Massive gap between items, but flush symbols to text
+                                const labelText = i === 0 ? ds.label + "                        " : ds.label;
+                                return {
+                                    text: labelText,
+                                    fillStyle: isVisible ? 'rgba(255, 255, 255, 1)' : 'transparent',
+                                    strokeStyle: isVisible ? ds.borderColor : '#cbd5e1',
+                                    lineWidth: 2.2,
+                                    hidden: false,
+                                    index: i,
+                                    fontColor: isVisible ? ds.borderColor : '#cbd5e1',
+                                    pointStyle: 'rectRounded'
+                                };
+                            });
+                        }
                     }
                 },
                 tooltip: {
@@ -695,13 +818,24 @@ async function updateTimeSeriesChart() {
 
                         if (tooltipModel.body) {
                             const year = tooltipModel.dataPoints[0].raw.x;
-                            let html = "";
+                            let html = `<div class="badge-year">${year}</div>`;
+
                             tooltipModel.dataPoints.forEach(dp => {
-                                const valStr = (dp.raw.y > 0 ? '+' : '') + dp.raw.y.toFixed(2);
-                                const label = dp.dataset.label.split(' - ')[0];
-                                html += `<div class="tooltip-val" style="color:${dp.dataset.borderColor}">${label}: ${valStr} ${varCfg.unit}</div>`;
+                                const val = dp.raw.y;
+                                const isPos = val > 0;
+                                const arrow = isPos ? '▲' : '▼';
+                                const valStr = (isPos ? '+' : '') + val.toFixed(2);
+                                let label = (dp.dataset.label === 'INDIA') ? 'IN' : (stateAcronyms[dp.dataset.label.toUpperCase()] || dp.dataset.label);
+
+                                html += `
+                                    <div class="badge-row">
+                                        <span class="badge-label" style="color:${dp.dataset.borderColor}">${label}</span>
+                                        <span class="badge-val" style="color:${dp.dataset.borderColor}">
+                                            <span class="trend-icon">${arrow}</span> ${valStr}<small>${varCfg.unit}</small>
+                                        </span>
+                                    </div>
+                                `;
                             });
-                            html += `<div class="tooltip-dist">${year}</div>`;
                             tooltipEl.innerHTML = html;
                         }
 
@@ -709,9 +843,9 @@ async function updateTimeSeriesChart() {
                         tooltipEl.style.opacity = 1;
                         tooltipEl.style.position = 'absolute';
                         tooltipEl.style.left = position.left + window.pageXOffset + tooltipModel.caretX + 'px';
-                        tooltipEl.style.top = position.top + window.pageYOffset + tooltipModel.caretY - 100 + 'px';
+                        tooltipEl.style.top = position.top + window.pageYOffset + tooltipModel.caretY - 95 + 'px';
                         tooltipEl.style.pointerEvents = 'none';
-                        tooltipEl.style.transition = 'all 0.05s ease';
+                        tooltipEl.style.transition = 'all 0.1s cubic-bezier(0.23, 1, 0.32, 1)';
                     }
                 }
             }
@@ -725,11 +859,11 @@ async function updateTimeSeriesChart() {
                     let ctx = chart.ctx;
                     ctx.save();
                     ctx.beginPath();
-                    ctx.setLineDash([5, 5]);
+                    ctx.setLineDash([8, 4]); // Longer dashes for tech feel
                     ctx.moveTo(x, yAxis.top);
                     ctx.lineTo(x, yAxis.bottom);
                     ctx.lineWidth = 1.5;
-                    ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+                    ctx.strokeStyle = 'rgba(15, 23, 42, 0.25)'; // Deep slate crosshair
                     ctx.stroke();
                     ctx.restore();
                 }
@@ -744,6 +878,13 @@ async function updateTimeSeriesChart() {
 function updateTimeSeriesBarChart(varCfg, scenario) {
     const canvas = document.getElementById('time-series-bar-chart');
     if (!canvas) return;
+
+    // 1. Update Title in Header
+    const barTitleEl = document.querySelector('#bar-graph-header span');
+    if (barTitleEl) {
+        barTitleEl.innerText = `STATE-WISE COMPARISON OF ${varCfg.label.toUpperCase()} (${scenario}) AVERAGED BETWEEN ${tsStartYear} TO ${tsEndYear}`;
+        barTitleEl.style.color = '#000000';
+    }
 
     if (tsBarChart) tsBarChart.destroy();
 
@@ -776,29 +917,39 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
     });
     const data = tsBarDataItems.map(d => d.val);
 
-    // Calculate anchored Y-limits based on SSP585 (state-level averages)
+    // Calculate anchored Y-limits based on all scenarios (global bounds)
     let barYMin = null, barYMax = null;
-    const ssp585Array = tsFullData[varCfg.json_key]?.[tsSeason]?.['ssp585'];
-    if (ssp585Array) {
-        const ssp585Filtered = ssp585Array.filter(d => d.year >= tsStartYear && d.year <= tsEndYear);
-        if (ssp585Filtered.length > 0) {
-            const keys = Object.keys(ssp585Filtered[0]).filter(k => k !== 'year' && k !== 'year_id');
-            let ssp585Means = [];
-            keys.forEach(k => {
-                const vals = ssp585Filtered.map(r => r[k]).filter(v => v !== null && !isNaN(v));
-                if (vals.length > 0) ssp585Means.push(vals.reduce((a, b) => a + b, 0) / vals.length);
-            });
+    const scenariosToPulse = ['ssp126', 'ssp245', 'ssp370', 'ssp585'];
+    let allScenarioMeans = [];
 
-            const combined = [...ssp585Means, ...data];
-            const min = Math.min(...combined);
-            const max = Math.max(...combined);
-            const pad = (max - min) * 0.08 || 0.1;
-            barYMin = min - pad;
-            barYMax = max + pad;
+    scenariosToPulse.forEach(scen => {
+        const scenData = tsFullData[varCfg.json_key]?.[tsSeason]?.[scen];
+        if (scenData) {
+            const scenFiltered = scenData.filter(d => d.year >= tsStartYear && d.year <= tsEndYear);
+            if (scenFiltered.length > 0) {
+                const keys = Object.keys(scenFiltered[0]).filter(k => k !== 'year' && k !== 'year_id');
+                keys.forEach(k => {
+                    const vals = scenFiltered.map(r => r[k]).filter(v => v !== null && !isNaN(v));
+                    if (vals.length > 0) allScenarioMeans.push(vals.reduce((a, b) => a + b, 0) / vals.length);
+                });
+            }
         }
+    });
+
+    if (allScenarioMeans.length > 0) {
+        const min = Math.min(...allScenarioMeans);
+        const max = Math.max(...allScenarioMeans);
+        const pad = (max - min) * 0.08 || 0.1;
+        barYMin = min - pad;
+        barYMax = max + pad;
     }
 
     const ctx = canvas.getContext('2d');
+
+    // Create Gradient for Bars
+    const barGrad = ctx.createLinearGradient(0, 0, 0, 400);
+    barGrad.addColorStop(0, '#3b82f6'); // Modern Blue
+    barGrad.addColorStop(1, '#1d4ed8'); // Deep Blue
 
     // Track mouse for pointer-relative tooltip
     canvas.addEventListener('mousemove', (e) => {
@@ -813,14 +964,21 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
             datasets: [{
                 label: varCfg.label,
                 data: data,
-                backgroundColor: '#2563eb',
-                borderColor: '#1e3a8a',
-                borderWidth: 1
+                backgroundColor: barGrad,
+                hoverBackgroundColor: '#60a5fa',
+                borderRadius: 6,
+                borderSkipped: false,
+                categoryPercentage: 0.9,
+                barPercentage: 0.9
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: {
+                duration: 1000,
+                easing: 'easeOutQuart'
+            },
             onHover: (evt, elements) => {
                 if (elements.length > 0) {
                     const idx = elements[0].index;
@@ -884,26 +1042,36 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
             scales: {
                 x: {
                     ticks: {
-                        font: { size: useFullNames ? 10 : 9, weight: 'bold' },
-                        color: '#000'
+                        font: { size: useFullNames ? 13 : 11, weight: '750' },
+                        color: '#000000',
+                        padding: 12
                     },
                     grid: { display: false },
-                    border: { color: '#000', width: 2 }
+                    border: { display: false }
                 },
                 y: {
-                    grid: { color: 'rgba(0,0,0,0.05)' },
-                    border: { color: '#000', width: 2 },
+                    grid: {
+                        color: (context) => {
+                            if (context.tick.value === 0) return data.some(v => v < 0) ? '#000000' : 'transparent';
+                            return 'rgba(0,0,0,0.03)';
+                        },
+                        lineWidth: (context) => (context.tick.value === 0 && data.some(v => v < 0)) ? 1 : 1,
+                        drawTicks: false
+                    },
+                    border: { display: true, color: '#000000', width: 2 },
                     suggestedMin: barYMin !== null ? Math.min(0, barYMin) : 0,
                     suggestedMax: barYMax !== null ? barYMax : undefined,
                     ticks: {
-                        color: '#000',
-                        font: { weight: 'normal', size: 11 }
+                        color: '#000000',
+                        font: { weight: '750', size: 12 },
+                        padding: 8
                     },
                     title: {
                         display: true,
                         text: `${varCfg.label} (${varCfg.unit})`,
-                        font: { size: 12, weight: 'bold' },
-                        color: '#0f172a'
+                        font: { size: 16, weight: '900' },
+                        color: '#000000',
+                        padding: 15
                     }
                 }
             }
@@ -913,45 +1081,104 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
 
 function renderTimeSeriesHeader(container, stateName, varLabel, scenario) {
     const seasons = [
-        { id: 'annual', label: 'Annual' },
+        { id: 'annual', label: 'ANNUAL' },
         { id: 'mam', label: 'MAM (Mar-May)' },
         { id: 'jjas', label: 'JJAS (Jun-Sep)' },
         { id: 'son', label: 'SON (Sep-Nov)' },
         { id: 'djf', label: 'DJF (Dec-Feb)' }
     ];
 
-    const yearOptions = [];
-    for (let y = 2015; y <= 2099; y++) yearOptions.push(y);
-
     container.innerHTML = `
-        <div class="ts-control-group">
-            Time Series of <span id="ts-title-state">${stateName}</span> for 
-            <select class="ts-select" id="ts-season-select">
+        <div class="ts-control-group" style="color:#000000;">
+            Time Series of <span id="ts-title-state" style="font-weight:850; margin:0 4px; color:#000000;">${stateName}</span> for 
+            <select class="ts-select" id="ts-season-select" style="margin-right:8px;">
                 ${seasons.map(s => `<option value="${s.id}" ${tsSeason === s.id ? 'selected' : ''}>${s.label}</option>`).join('')}
             </select>
-            ${varLabel} <span id="ts-title-scenario">(${scenario})</span> between
-            <select class="ts-select" id="ts-start-year">
-                ${yearOptions.map(y => `<option value="${y}" ${tsStartYear === y ? 'selected' : ''}>${y}</option>`).join('')}
-            </select>
-            and
-            <select class="ts-select" id="ts-end-year">
-                ${yearOptions.map(y => `<option value="${y}" ${tsEndYear === y ? 'selected' : ''}>${y}</option>`).join('')}
-            </select>
+            <span style="margin-right:8px; color:#000000;">${varLabel}</span>
+            <span id="ts-title-scenario" style="font-weight:750; margin-right:4px; color:#000000;">(${scenario})</span> 
+            
+            <div style="display:inline-flex; align-items:center; gap:6px; margin-left:8px;">
+                <div class="year-picker-container">
+                    <button class="year-picker-btn" id="start-year-trigger">${tsStartYear}</button>
+                    <div class="year-picker-popup" id="start-picker-popup">
+                        <div class="picker-header"><span>Select Start Year</span></div>
+                        <div class="year-grid" id="start-year-grid"></div>
+                    </div>
+                </div>
+                <span style="font-weight:700; font-size:0.75rem; color:#000000;">to</span>
+                <div class="year-picker-container">
+                    <button class="year-picker-btn" id="end-year-trigger">${tsEndYear}</button>
+                    <div class="year-picker-popup" id="end-picker-popup">
+                        <div class="picker-header"><span>Select End Year</span></div>
+                        <div class="year-grid" id="end-year-grid"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     `;
 
-    // Listeners
+    const setupPicker = (type) => {
+        const isStart = type === 'start';
+        const trigger = container.querySelector(isStart ? '#start-year-trigger' : '#end-year-trigger');
+        const popup = container.querySelector(isStart ? '#start-picker-popup' : '#end-picker-popup');
+        const grid = container.querySelector(isStart ? '#start-year-grid' : '#end-year-grid');
+
+        const render = () => {
+            grid.innerHTML = '';
+            for (let y = 2015; y <= 2099; y++) {
+                const cell = document.createElement('button');
+                cell.className = 'year-cell';
+                cell.innerText = y;
+
+                const otherVal = isStart ? tsEndYear : tsStartYear;
+                const isInvalid = isStart ? (y > otherVal - 30) : (y < otherVal + 30);
+                const isActive = (isStart && y === tsStartYear) || (!isStart && y === tsEndYear);
+
+                if (isInvalid) cell.classList.add('disabled');
+                if (isActive) cell.classList.add('active');
+
+                cell.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (isInvalid) return;
+                    if (isStart) {
+                        tsStartYear = y;
+                        trigger.innerText = y;
+                        popup.classList.remove('visible');
+                        // Auto jump
+                        const endTrigger = container.querySelector('#end-year-trigger');
+                        setTimeout(() => endTrigger.click(), 150);
+                    } else {
+                        tsEndYear = y;
+                        trigger.innerText = y;
+                        popup.classList.remove('visible');
+                        updateDashboard();
+                    }
+                });
+                grid.appendChild(cell);
+            }
+        };
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.year-picker-popup').forEach(p => { if (p !== popup) p.classList.remove('visible'); });
+            const willShow = !popup.classList.contains('visible');
+            popup.classList.toggle('visible', willShow);
+            if (willShow) render();
+        });
+    };
+
+    setupPicker('start');
+    setupPicker('end');
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.year-picker-container')) {
+            document.querySelectorAll('.year-picker-popup').forEach(p => p.classList.remove('visible'));
+        }
+    });
+
     container.querySelector('#ts-season-select').addEventListener('change', (e) => {
         tsSeason = e.target.value;
-        updateTimeSeriesChart();
-    });
-    container.querySelector('#ts-start-year').addEventListener('change', (e) => {
-        tsStartYear = parseInt(e.target.value);
-        updateTimeSeriesChart();
-    });
-    container.querySelector('#ts-end-year').addEventListener('change', (e) => {
-        tsEndYear = parseInt(e.target.value);
-        updateTimeSeriesChart();
+        updateDashboard();
     });
 }
 
@@ -975,8 +1202,8 @@ function populateSearch() {
 
         container.innerHTML = matches.map((row, i) => `
             <div class="search-item ${i === selectedIdx ? 'selected' : ''}" data-index="${i}">
-                <span>${config.searchLabel(row)}</span>
-                ${config.searchSub(row) ? `<span class="state-label">${config.searchSub(row)}</span>` : ""}
+                <div class="search-item-main">${config.searchLabel(row)}</div>
+                ${config.searchSub(row) ? `<div class="search-item-sub">${config.searchSub(row)}</div>` : ""}
             </div>
         `).join('');
         container.classList.toggle('visible', matches.length > 0);
@@ -1100,30 +1327,24 @@ function setupBarFilter() {
 
     const updateCount = () => {
         const count = tsVisibleStates.size;
-        filterBtn.innerText = count === states.length ? 'Filter States (All)' : `Filter States (${count})`;
+        filterBtn.innerText = `Filter States (${count})`;
     };
 
     checks.forEach(chk => {
         chk.addEventListener('change', () => {
-            if (chk.checked) tsVisibleStates.add(chk.value);
-            else {
+            if (chk.checked) {
+                tsVisibleStates.add(chk.value);
+            } else {
+                // Minimum selection enforcement: Cannot have less than 2 states
+                if (tsVisibleStates.size <= 2) {
+                    chk.checked = true; // Re-check visually
+                    return;
+                }
                 tsVisibleStates.delete(chk.value);
-                filterAll.checked = false;
             }
             updateCount();
             refreshBarChart();
         });
-    });
-
-    filterAll?.addEventListener('change', (e) => {
-        const isChecked = e.target.checked;
-        checks.forEach(chk => {
-            chk.checked = isChecked;
-            if (isChecked) tsVisibleStates.add(chk.value);
-            else tsVisibleStates.delete(chk.value);
-        });
-        updateCount();
-        refreshBarChart();
     });
 
     filterBtn?.addEventListener('click', (e) => {
