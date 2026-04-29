@@ -16,7 +16,7 @@ let tsSelectedVar = 'precipitation';
 let tsFullData = null; // Cache for time_series_data.json
 let tsTriggeredByMap = false; // To show red line only on click
 let tsPeriodMeans = {}; // For coloring the map in TS mode
-let tsBaselines = {}; // For anomaly calculation in TS mode
+let tsBaselines = {}; // For change calculation in TS mode
 let tsBarChart = null;
 let tsBarDataItems = []; // For bi-directional sync
 let tsBarSort = 'az'; // Default Alphabetical A-Z
@@ -56,7 +56,7 @@ const levelsCfg = {
     },
     state: {
         variables: 'JSONs/State_VARIABLES.json',
-        data: 'JSONs/State_DATA.json',
+        data: 'JSONs/state_time_series_data.json',
         geojson: 'JSONs/state_ultra_optimized.geojson',
         keyGen: (props) => `${(props.STATE_UT || "").trim()}`.toLowerCase(),
         rowKeyGen: (row) => `${row.STATE_UT.trim()}`.toLowerCase(),
@@ -192,14 +192,57 @@ async function load() {
         document.querySelectorAll('.map-container').forEach(c => c.classList.add('is-loading'));
 
         const [vResp, dResp, gResp] = await Promise.all([
-            fetch(config.variables),
-            fetch(config.data),
-            fetch(config.geojson)
+            fetch(`${config.variables}?v=${Date.now()}`),
+            fetch(`${config.data}?v=${Date.now()}`),
+            fetch(`${config.geojson}?v=${Date.now()}`)
         ]);
 
         variablesConfig = await vResp.json();
-        datasetJSON = await dResp.json();
+        const rawData = await dResp.json();
         datasetGeoJSON = await gResp.json();
+
+        if (currentLevel === 'state') {
+            tsFullData = rawData; // Cache for Time Series chart
+
+            // Extract unique state names from the first available dataset (INDIA is always there)
+            const firstVar = Object.keys(variablesConfig)[0];
+            const jsKey = variablesConfig[firstVar].json_key;
+            const sampleData = tsFullData[jsKey]['annual']['ssp126'];
+            const stateNames = Object.keys(sampleData[0]).filter(k => k !== 'year' && k !== 'year_id');
+
+            // Transform Time Series into Spatial Rows (Mean per Term)
+            datasetJSON = stateNames.map(name => {
+                const row = { STATE_UT: name };
+
+                Object.keys(variablesConfig).forEach(varKey => {
+                    const vCfg = variablesConfig[varKey];
+                    const jKey = vCfg.json_key;
+
+                    Object.keys(vCfg.scenarios).forEach(scen => {
+                        const sKey = scen.toLowerCase();
+
+                        Object.keys(terms).forEach(termKey => {
+                            const [start, end] = terms[termKey].years.match(/\d{4}/g).map(Number);
+                            const yearlyValues = tsFullData[jKey]?.['annual']?.[sKey];
+
+                            if (yearlyValues) {
+                                const period = yearlyValues.filter(d => d.year >= start && d.year <= end);
+                                const vals = period.map(d => d[name]).filter(v => v !== null && !isNaN(v));
+                                if (vals.length > 0) {
+                                    const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+                                    row[`${jKey}_${sKey}_${termKey}`] = mean;
+                                } else {
+                                    row[`${jKey}_${sKey}_${termKey}`] = null;
+                                }
+                            }
+                        });
+                    });
+                });
+                return row;
+            });
+        } else {
+            datasetJSON = rawData; // Districts still use the flat JSON format
+        }
 
         window.dataLookup = {};
         datasetJSON.forEach(row => {
@@ -428,7 +471,7 @@ async function updateDashboard() {
         if (hdr) {
             if (isTimeSeries) {
                 if (key === 'near') {
-                    hdr.innerText = `${varCfg.label} (${scenario}) Averaged between ${tsStartYear} and ${tsEndYear}`;
+                    hdr.innerText = `${varCfg.label} ${scenario} (${tsStartYear}-${tsEndYear})`;
                 }
             } else {
                 hdr.innerText = `${terms[key].label} ${varCfg.label} ${scenario} ${terms[key].years}`;
@@ -456,7 +499,7 @@ async function updateDashboard() {
                     <div class="district-tooltip">
                         <span class="tooltip-val">${formattedVal} ${varCfg.unit}</span>
                         <span class="tooltip-dist">${name}</span>
-                        <span class="tooltip-state">${tsStartYear}-${tsEndYear} Mean</span>
+                        <span class="tooltip-state">${tsStartYear}-${tsEndYear} Average</span>
                     </div>
                 `, { sticky: false, direction: 'auto', offset: [0, -10], className: 'custom-tooltip-pane' });
             } else {
@@ -502,7 +545,7 @@ async function updateDashboard() {
         if (!ticksEl.parentElement) scaleEl.after(ticksEl);
         ticksEl.innerHTML = ticks.map((v, i) => {
             const pct = (i / (ticks.length - 1)) * 100;
-            const label = (v > 0 && metric !== 'mean_temp' ? '+' : '') + (v === 0 ? '0' : v.toFixed(1));
+            const label = (v > 0 && metric === 'precipitation' ? '+' : '') + (v === 0 ? '0' : (metric === 'precipitation' ? v.toFixed(1) : Math.abs(v).toFixed(1)));
             return `<span class="legend-tick" style="left:${pct.toFixed(2)}%">${label}</span>`;
         }).join('');
         const old = container.querySelector('.legend-labels');
@@ -548,7 +591,7 @@ async function updateTimeSeriesChart() {
     // 3. Load Unified Data if needed
     if (!tsFullData) {
         try {
-            const resp = await fetch('JSONs/time_series_data.json');
+            const resp = await fetch(`JSONs/state_time_series_data.json?v=${Date.now()}`);
             if (!resp.ok) throw new Error('File not found');
             tsFullData = await resp.json();
             noDataOverlay.classList.remove('visible');
@@ -587,7 +630,7 @@ async function updateTimeSeriesChart() {
     // 4.6 Sync map header title
     const nearHdr = document.getElementById('near-term-header');
     if (nearHdr) {
-        nearHdr.innerText = `${varCfg.label} (${scenario}) Averaged between ${tsStartYear} and ${tsEndYear}`;
+        nearHdr.innerText = `${varCfg.label} (${scenario}) Averaged Between ${tsStartYear} and ${tsEndYear}`;
     }
 
     // Process India Points (Always Green)
@@ -882,7 +925,7 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
     // 1. Update Title in Header
     const barTitleEl = document.querySelector('#bar-graph-header span');
     if (barTitleEl) {
-        barTitleEl.innerText = `STATE-WISE COMPARISON OF ${varCfg.label.toUpperCase()} (${scenario}) AVERAGED BETWEEN ${tsStartYear} TO ${tsEndYear}`;
+        barTitleEl.innerHTML = `State-Wise Comparison of <span style="font-weight:850; margin:0 4px;">${varCfg.label}</span> <span style="font-weight:750; margin-right:4px;">(${scenario})</span> Averaged Between <span style="font-weight:850; margin-left:4px;">${tsStartYear} to ${tsEndYear}</span>`;
         barTitleEl.style.color = '#000000';
     }
 
@@ -979,6 +1022,11 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
                 duration: 1000,
                 easing: 'easeOutQuart'
             },
+            layout: {
+                padding: {
+                    bottom: 15
+                }
+            },
             onHover: (evt, elements) => {
                 if (elements.length > 0) {
                     const idx = elements[0].index;
@@ -1042,9 +1090,9 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
             scales: {
                 x: {
                     ticks: {
-                        font: { size: useFullNames ? 13 : 11, weight: '750' },
+                        font: { size: useFullNames ? 14 : 12, weight: '900' },
                         color: '#000000',
-                        padding: 12
+                        padding: 6
                     },
                     grid: { display: false },
                     border: { display: false }

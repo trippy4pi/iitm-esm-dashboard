@@ -68,10 +68,10 @@
 }
 
 .picker-header span {
-    font-size: 0.7rem;
+    font-size: 0.8rem;
     font-weight: 900;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.12em;
     color: #64748b;
 }
 
