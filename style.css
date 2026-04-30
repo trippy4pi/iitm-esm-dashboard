@@ -15,8 +15,8 @@
 }
 
 /* Remove disturbing focus indicators/rings globally */
-*:focus, 
-*:active, 
+*:focus,
+*:active,
 *:focus-visible {
     outline: none !important;
 }
@@ -97,15 +97,14 @@ body {
 
 /* Header - Compact 70px */
 header {
-    height: 80px;
-    padding: 0 1.5rem;
+    height: clamp(80px, 10vh, 110px);
+    padding: 0 clamp(1rem, 2vw, 2.5rem);
     border-bottom: 2px solid #0c4a6e;
     background: #0c4a6e;
     display: flex;
     align-items: center;
     position: relative;
     overflow: visible;
-    /* Content like search results can float */
     color: #f0f9ff;
     z-index: 9999;
 }
@@ -115,9 +114,10 @@ header {
     position: absolute;
     inset: 0;
     overflow: hidden;
-    /* Fenced */
     z-index: -1;
     pointer-events: none;
+    will-change: transform;
+    contain: strict;
 }
 
 .header-atmosphere::before {
@@ -136,19 +136,17 @@ header {
         radial-gradient(circle at 80% 10%, #60a5fa 0%, transparent 40%),
         radial-gradient(circle at 40% 10%, #1e40af 0%, transparent 35%);
     filter: blur(25px);
-    /* Richer abyss */
     animation: blue-odyssey-drift 30s ease-in-out infinite alternate;
+    will-change: transform;
 }
 
 @keyframes blue-odyssey-drift {
     0% {
         transform: rotate(0deg) scale(1);
-        filter: hue-rotate(0deg);
     }
 
     100% {
         transform: rotate(5deg) scale(1.1);
-        filter: hue-rotate(15deg);
     }
 }
 
@@ -184,8 +182,7 @@ header.flare-active::after {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1.5rem;
-    /* Balanced staging */
+    gap: clamp(1rem, 1.5vw, 2.5rem);
     width: 100%;
 }
 
@@ -198,22 +195,23 @@ header.flare-active::after {
 
 .header-brand h1 {
     color: #ffffff;
-    font-size: 2.5rem;
-    font-weight: 800;
+    font-size: clamp(1.4rem, 2.2vw, 2.5rem);
+    font-weight: 850;
     text-transform: uppercase;
-    letter-spacing: 0.0rem;
+    letter-spacing: -0.01em;
     text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
     margin: 0;
+    line-height: 1;
 }
 
 .logo {
-    width: 60px;
-    height: 60px;
+    width: clamp(55px, 7vh, 80px);
+    height: clamp(55px, 7vh, 80px);
     background: rgba(255, 255, 255, 0.1);
     border: 1.5px solid rgba(255, 255, 255, 0.2);
     border-radius: 50%;
     overflow: hidden;
-    flex: 0 0 60px;
+    flex: 0 0 clamp(55px, 7vh, 80px);
 }
 
 #main-logo {
@@ -223,11 +221,11 @@ header.flare-active::after {
 }
 
 h1 {
-    font-size: 1.3rem;
-    font-weight: 850;
+    font-size: inherit;
+    font-weight: inherit;
     margin: 0;
-    letter-spacing: -0.01em;
-    line-height: 1.1;
+    letter-spacing: inherit;
+    line-height: inherit;
     white-space: nowrap;
 }
 
@@ -304,14 +302,13 @@ input:checked+.classic-slider:before {
     align-items: center;
     background: #ffffff;
     border: 1px solid #cbd5e1;
-    /* Thinner, softer border */
     border-radius: 50px;
     padding: 0 16px;
-    width: 240px;
-    /* Svelte width */
+    width: clamp(200px, 15vw, 280px);
     height: 36px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    flex-shrink: 1;
 }
 
 .search-icon {
@@ -323,8 +320,7 @@ input:checked+.classic-slider:before {
 
 .search-box:focus-within {
     border-color: #38bdf8;
-    width: 260px;
-    /* Subtle expansion for focus focus */
+    width: clamp(220px, 17vw, 300px);
     box-shadow: 0 6px 20px rgba(56, 189, 248, 0.15);
 }
 
@@ -417,23 +413,21 @@ input:checked+.classic-slider:before {
 .premium-select {
     appearance: none;
     background: #ffffff;
-    /* Solid Opaque */
     border: 1.5px solid #000000;
-    /* Precision Rim */
     border-radius: 10px;
     padding: 6px 28px 6px 14px;
     font-family: inherit;
-    font-size: 0.8rem;
+    font-size: clamp(0.75rem, 0.8vw, 0.85rem);
     font-weight: 750;
     color: #0f172a;
-    /* Original Clinical Dark */
     cursor: pointer;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%230f172a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='4' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 10px center;
     background-size: 12px;
-    min-width: 170px;
+    min-width: clamp(140px, 10vw, 180px);
     transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
 .premium-select:hover {
@@ -446,15 +440,13 @@ input:checked+.classic-slider:before {
     position: relative;
     gap: 0;
     background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
-    /* Neutral Grey Gradient */
     padding: 3px;
     border-radius: 12px;
-    width: 320px;
-    /* Mission Control Wide */
+    width: clamp(280px, 20vw, 340px);
     height: 36px;
     overflow: hidden;
     border: 1.5px solid #000000;
-    /* Physical Cleft Rim */
+    flex-shrink: 0;
 }
 
 /* The Sliding Soap Bar Background */
@@ -630,7 +622,9 @@ main {
     filter: blur(100px);
     opacity: 0.4;
     mix-blend-mode: multiply;
-    transition: all 2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background 2s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+    contain: layout style;
 }
 
 .blob-1 {
@@ -714,9 +708,7 @@ main {
 
 .map-container {
     background: #ffffff;
-    /* Absolute scientific purity */
     border: 2px solid #000000;
-    /* Reverted to classic structural black */
     border-radius: 16px;
     display: flex;
     flex-direction: column;
@@ -725,9 +717,12 @@ main {
     flex: 1 1 0;
     min-width: 0;
     aspect-ratio: 3/4;
-    transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: flex 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+        width 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+        margin 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+        border-width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 25px var(--glow-bleed, rgba(0, 0, 0, 0.1));
-    /* Integrated atmospheric glow */
 }
 
 /* Mode Transitions - Seamless Merge */
@@ -1003,16 +998,20 @@ body:not(.time-series-mode) .big-rect-placeholder {
 
 /* Map Components */
 .map-header {
-    height: 48px;
+    height: clamp(40px, 5vh, 56px);
     display: flex;
     align-items: center;
     justify-content: center;
     background: #f8fafc;
     font-weight: 850;
-    font-size: 0.95rem;
-    letter-spacing: 0.06em;
+    font-size: clamp(0.7rem, 0.9vw, 1rem);
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     border-bottom: 2px solid var(--border-strong);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 0.75rem;
 }
 
 .map-view {
@@ -1036,17 +1035,41 @@ body:not(.time-series-mode) .big-rect-placeholder {
 .legend-scale {
     display: flex;
     height: 12px;
-    border: 1.5px solid #000;
     margin: 0 4px;
+    align-items: stretch;
 }
 
 .legend-scale-block {
     flex: 1;
+    border-top: 1.5px solid #000;
+    border-bottom: 1.5px solid #000;
     border-right: 1px solid #000;
 }
 
-.legend-scale-block:last-child {
-    border-right: none;
+/* First color block (immediately after the left arrow) */
+.legend-scale-arrow.left+.legend-scale-block {
+    border-left: 1.5px solid #000;
+}
+
+/* Last color block (the one right before the right arrow) */
+.legend-scale-block+.legend-scale-arrow.right {
+    /* This rule exists only to establish the relationship */
+}
+
+.legend-scale-block:has(+ .legend-scale-arrow.right) {
+    border-right: 1.5px solid #000;
+}
+
+.legend-scale-arrow {
+    flex: 0 0 10px;
+    display: flex;
+    align-items: stretch;
+}
+
+.legend-scale-arrow svg {
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 
 .legend-ticks {
@@ -1100,16 +1123,13 @@ body:not(.time-series-mode) .big-rect-placeholder {
 }
 
 .toggle-slider {
-    border: 1px solid #000;
-}
-
-.toggle-slider {
     position: absolute;
     top: 3px;
     left: 3px;
     width: calc(50% - 3px);
     height: calc(100% - 6px);
     background: #ffffff;
+    border: 1px solid #000;
     border-radius: 9px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
     transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -1146,8 +1166,6 @@ body:not(.time-series-mode) .big-rect-placeholder {
 /* Master Glassmorphic Tooltip */
 .district-tooltip {
     background: #ffffff !important;
-    backdrop-filter: blur(12px) saturate(180%);
-    -webkit-backdrop-filter: blur(12px) saturate(180%);
     border: 0.8px solid #000000 !important;
     border-radius: 10px !important;
     padding: 10px 14px !important;
@@ -1269,15 +1287,13 @@ footer {
 .ts-custom-tooltip {
     z-index: 10000;
     transform: translate(-50%, -10%);
-    background: rgba(255, 255, 255, 0.72) !important;
-    backdrop-filter: blur(10px) saturate(180%);
-    -webkit-backdrop-filter: blur(10px) saturate(180%);
+    background: rgba(255, 255, 255, 0.95) !important;
     border: 0.8px solid rgba(0, 0, 0, 0.12) !important;
     border-radius: 10px !important;
     padding: 8px 12px !important;
     min-width: unset !important;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
-    transition: all 0.1s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08) !important;
+    transition: opacity 0.1s ease;
 }
 
 .badge-year {
@@ -1491,4 +1507,21 @@ footer {
 .year-grid::-webkit-scrollbar-thumb {
     background: #cbd5e1;
     border-radius: 10px;
+}
+
+/* Reduced-motion fallback — disables all heavy GPU animations for weak devices */
+@media (prefers-reduced-motion: reduce) {
+
+    .header-atmosphere::before,
+    .plasma-blob,
+    header::after {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .map-container,
+    .scenario-radios::before,
+    .toggle-slider {
+        transition-duration: 0.01s !important;
+    }
 }

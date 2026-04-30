@@ -4,14 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <meta name="color-scheme" content="light">
+    <base target="_self">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" as="style">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;800;900&display=swap"
         rel="stylesheet">
     <title>IITM-ESM Dashboard</title>
     <link rel="icon" type="image/x-icon" href="assets/favicon.png">
-    <link rel="stylesheet" href="style.css?v=1.8">
+    <link rel="stylesheet" href="style.css?v=1.9">
     <style>
         /* NUCLEAR FOCUS RESET (Bypasses CSS Cache) */
         *,
@@ -51,7 +54,9 @@
         <div class="header-inner">
             <div class="header-brand">
                 <div class="logo">
-                    <img id="main-logo" src="assets/IITM_Logo.png" alt="IITM Logo">
+                    <a href="https://www.tropmet.res.in/" target="_blank">
+                        <img id="main-logo" src="assets/IITM_Logo.png" alt="IITM Logo">
+                    </a>
                 </div>
                 <div class="brand-text">
                     <h1>IITM-ESM Climate Viewer</h1>
@@ -193,9 +198,9 @@
         </div>
     </footer>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="script.js?v=1.5"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <script src="script.js?v=1.6" defer></script>
 </body>
 
 </html>

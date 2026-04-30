@@ -22,6 +22,23 @@ let tsBarDataItems = []; // For bi-directional sync
 let tsBarSort = 'az'; // Default Alphabetical A-Z
 let tsVisibleStates = new Set(); // For filtering bars
 
+// Data cache to avoid redundant fetches
+const _dataCache = { state: null, district: null };
+
+// Guard flag for populateSearch to prevent duplicate listeners
+let _searchInitialized = false;
+
+// Stored reference for year-picker global click handler
+let _yearPickerClickHandler = null;
+
+const tsSeasonLabels = {
+    'annual': 'Annual',
+    'mam': 'MAM',
+    'jjas': 'JJAS',
+    'son': 'SON',
+    'djf': 'DJF'
+};
+
 const stateAcronyms = {
     "ANDHRA PRADESH": "AP", "ARUNACHAL PRADESH": "AR", "ASSAM": "AS", "BIHAR": "BR",
     "CHANDIGARH": "CH", "CHHATTISGARH": "CG", "DADRA & NAGAR HAVELI & DAMAN & DIU": "DD",
@@ -191,15 +208,30 @@ async function load() {
         const config = levelsCfg[currentLevel];
         document.querySelectorAll('.map-container').forEach(c => c.classList.add('is-loading'));
 
-        const [vResp, dResp, gResp] = await Promise.all([
-            fetch(`${config.variables}?v=${Date.now()}`),
-            fetch(`${config.data}?v=${Date.now()}`),
-            fetch(`${config.geojson}?v=${Date.now()}`)
-        ]);
+        let rawData;
 
-        variablesConfig = await vResp.json();
-        const rawData = await dResp.json();
-        datasetGeoJSON = await gResp.json();
+        // Use cache if available to avoid re-fetching large JSON files
+        if (_dataCache[currentLevel]) {
+            variablesConfig = _dataCache[currentLevel].variables;
+            rawData = _dataCache[currentLevel].data;
+            datasetGeoJSON = _dataCache[currentLevel].geojson;
+        } else {
+            const [vResp, dResp, gResp] = await Promise.all([
+                fetch(config.variables),
+                fetch(config.data),
+                fetch(config.geojson)
+            ]);
+
+            variablesConfig = await vResp.json();
+            rawData = await dResp.json();
+            datasetGeoJSON = await gResp.json();
+
+            _dataCache[currentLevel] = {
+                variables: variablesConfig,
+                data: rawData,
+                geojson: datasetGeoJSON
+            };
+        }
 
         if (currentLevel === 'state') {
             tsFullData = rawData; // Cache for Time Series chart
@@ -440,9 +472,12 @@ async function updateDashboard() {
         const hdr = document.querySelector('header');
         if (hdr) {
             hdr.classList.remove('flare-active');
-            void hdr.offsetWidth; // Force Reflow
             document.documentElement.style.setProperty('--header-flare-color', baseColor.replace('1)', '0.80)'));
-            hdr.classList.add('flare-active');
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    hdr.classList.add('flare-active');
+                });
+            });
         }
     }
 
@@ -471,7 +506,8 @@ async function updateDashboard() {
         if (hdr) {
             if (isTimeSeries) {
                 if (key === 'near') {
-                    hdr.innerText = `${varCfg.label} ${scenario} (${tsStartYear}-${tsEndYear})`;
+                    const seasonLabel = tsSeasonLabels[tsSeason] || tsSeason.toUpperCase();
+                    hdr.innerText = `${seasonLabel} ${varCfg.label} ${scenario} (${tsStartYear}-${tsEndYear})`;
                 }
             } else {
                 hdr.innerText = `${terms[key].label} ${varCfg.label} ${scenario} ${terms[key].years}`;
@@ -712,6 +748,9 @@ async function updateTimeSeriesChart() {
 
     // 5. Render Chart
     if (tsChart) tsChart.destroy();
+    // Clean up orphaned tooltip element
+    const oldTooltip = document.getElementById('chartjs-tooltip');
+    if (oldTooltip) oldTooltip.remove();
 
     const ctx = canvas.getContext('2d');
 
@@ -884,9 +923,9 @@ async function updateTimeSeriesChart() {
 
                         const position = context.chart.canvas.getBoundingClientRect();
                         tooltipEl.style.opacity = 1;
-                        tooltipEl.style.position = 'absolute';
-                        tooltipEl.style.left = position.left + window.pageXOffset + tooltipModel.caretX + 'px';
-                        tooltipEl.style.top = position.top + window.pageYOffset + tooltipModel.caretY - 95 + 'px';
+                        tooltipEl.style.position = 'fixed';
+                        tooltipEl.style.left = position.left + tooltipModel.caretX + 'px';
+                        tooltipEl.style.top = position.top + tooltipModel.caretY - 95 + 'px';
                         tooltipEl.style.pointerEvents = 'none';
                         tooltipEl.style.transition = 'all 0.1s cubic-bezier(0.23, 1, 0.32, 1)';
                     }
@@ -914,6 +953,12 @@ async function updateTimeSeriesChart() {
         }]
     });
 
+    // Hide tooltip when mouse leaves the chart canvas
+    canvas.addEventListener('mouseleave', () => {
+        const tip = document.getElementById('chartjs-tooltip');
+        if (tip) tip.style.opacity = 0;
+    }, { once: false });
+
     // 6. Render Bar Chart
     updateTimeSeriesBarChart(varCfg, scenario);
 }
@@ -925,11 +970,15 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
     // 1. Update Title in Header
     const barTitleEl = document.querySelector('#bar-graph-header span');
     if (barTitleEl) {
-        barTitleEl.innerHTML = `State-Wise Comparison of <span style="font-weight:850; margin:0 4px;">${varCfg.label}</span> <span style="font-weight:750; margin-right:4px;">(${scenario})</span> Averaged Between <span style="font-weight:850; margin-left:4px;">${tsStartYear} to ${tsEndYear}</span>`;
+        const seasonLabel = tsSeasonLabels[tsSeason] || tsSeason.toUpperCase();
+        barTitleEl.innerHTML = `State-Wise Comparison of <span style="font-weight:850; margin:0 4px;">${seasonLabel} ${varCfg.label}</span> <span style="font-weight:750; margin-right:4px;">(${scenario})</span> Averaged Between <span style="font-weight:850; margin-left:4px;">${tsStartYear} to ${tsEndYear}</span>`;
         barTitleEl.style.color = '#000000';
     }
 
     if (tsBarChart) tsBarChart.destroy();
+    // Clean up orphaned tooltip element from bar chart
+    const oldBarTooltip = document.getElementById('chartjs-tooltip');
+    if (oldBarTooltip) oldBarTooltip.remove();
 
     // Prepare data
     let items = Object.keys(stateAcronyms)
@@ -994,11 +1043,18 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
     barGrad.addColorStop(0, '#3b82f6'); // Modern Blue
     barGrad.addColorStop(1, '#1d4ed8'); // Deep Blue
 
-    // Track mouse for pointer-relative tooltip
-    canvas.addEventListener('mousemove', (e) => {
-        canvas._lastMouseX = e.pageX;
-        canvas._lastMouseY = e.pageY;
-    });
+    // Track mouse for pointer-relative tooltip (guarded to prevent listener stacking)
+    if (!canvas._mouseMoveAttached) {
+        canvas.addEventListener('mousemove', (e) => {
+            canvas._lastMouseX = e.clientX;
+            canvas._lastMouseY = e.clientY;
+        });
+        canvas.addEventListener('mouseleave', () => {
+            const tip = document.getElementById('chartjs-tooltip');
+            if (tip) tip.style.opacity = 0;
+        });
+        canvas._mouseMoveAttached = true;
+    }
 
     tsBarChart = new Chart(ctx, {
         type: 'bar',
@@ -1070,8 +1126,8 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
                         }
 
                         tooltipEl.style.opacity = 1;
-                        tooltipEl.style.position = 'absolute';
-                        // Move to current mouse pointer
+                        tooltipEl.style.position = 'fixed';
+                        // Move to current mouse pointer (using clientX/Y for iframe safety)
                         tooltipEl.style.left = (context.chart.canvas._lastMouseX || 0) + 'px';
                         tooltipEl.style.top = (context.chart.canvas._lastMouseY || 0) - 100 + 'px';
                         tooltipEl.style.pointerEvents = 'none';
@@ -1218,11 +1274,16 @@ function renderTimeSeriesHeader(container, stateName, varLabel, scenario) {
     setupPicker('start');
     setupPicker('end');
 
-    document.addEventListener('click', (e) => {
+    // Remove previous global click handler before adding a new one (prevents leak)
+    if (_yearPickerClickHandler) {
+        document.removeEventListener('click', _yearPickerClickHandler);
+    }
+    _yearPickerClickHandler = (e) => {
         if (!e.target.closest('.year-picker-container')) {
             document.querySelectorAll('.year-picker-popup').forEach(p => p.classList.remove('visible'));
         }
-    });
+    };
+    document.addEventListener('click', _yearPickerClickHandler);
 
     container.querySelector('#ts-season-select').addEventListener('change', (e) => {
         tsSeason = e.target.value;
@@ -1233,49 +1294,56 @@ function renderTimeSeriesHeader(container, stateName, varLabel, scenario) {
 function populateSearch() {
     const input = document.getElementById('district-search');
     const container = document.getElementById('search-results');
-    const config = levelsCfg[currentLevel];
     if (!input || !container || !datasetJSON) return;
 
     let selectedIdx = -1;
     let matches = [];
 
     const updateResults = () => {
+        const cfg = levelsCfg[currentLevel]; // Always use current level
         const val = input.value.toLowerCase().trim();
         if (val.length < 1) { container.classList.remove('visible'); return; }
         matches = datasetJSON.filter(row => {
-            const label = config.searchLabel(row).toLowerCase();
-            const sub = config.searchSub(row).toLowerCase();
+            const label = cfg.searchLabel(row).toLowerCase();
+            const sub = cfg.searchSub(row).toLowerCase();
             return label.includes(val) || sub.includes(val);
         }).slice(0, 10);
 
         container.innerHTML = matches.map((row, i) => `
             <div class="search-item ${i === selectedIdx ? 'selected' : ''}" data-index="${i}">
-                <div class="search-item-main">${config.searchLabel(row)}</div>
-                ${config.searchSub(row) ? `<div class="search-item-sub">${config.searchSub(row)}</div>` : ""}
+                <div class="search-item-main">${cfg.searchLabel(row)}</div>
+                ${cfg.searchSub(row) ? `<div class="search-item-sub">${cfg.searchSub(row)}</div>` : ""}
             </div>
         `).join('');
         container.classList.toggle('visible', matches.length > 0);
     };
 
-    input.addEventListener('input', updateResults);
-    input.addEventListener('keydown', (e) => {
-        if (!container.classList.contains('visible')) return;
-        if (e.key === 'ArrowDown') { e.preventDefault(); selectedIdx = (selectedIdx + 1) % matches.length; updateResults(); }
-        else if (e.key === 'ArrowUp') { e.preventDefault(); selectedIdx = (selectedIdx - 1 + matches.length) % matches.length; updateResults(); }
-        else if (e.key === 'Enter' && selectedIdx > -1) { selectFeature(config.rowKeyGen(matches[selectedIdx]), true); container.classList.remove('visible'); input.blur(); }
-    });
+    // Only attach DOM event listeners once; on subsequent calls just update closure refs
+    if (!_searchInitialized) {
+        input.addEventListener('input', () => updateResults());
+        input.addEventListener('keydown', (e) => {
+            if (!container.classList.contains('visible')) return;
+            const cfg = levelsCfg[currentLevel];
+            if (e.key === 'ArrowDown') { e.preventDefault(); selectedIdx = (selectedIdx + 1) % matches.length; updateResults(); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); selectedIdx = (selectedIdx - 1 + matches.length) % matches.length; updateResults(); }
+            else if (e.key === 'Enter' && selectedIdx > -1) { selectFeature(cfg.rowKeyGen(matches[selectedIdx]), true); container.classList.remove('visible'); input.blur(); }
+        });
 
-    container.addEventListener('click', (e) => {
-        const item = e.target.closest('.search-item');
-        if (item) {
-            const idx = parseInt(item.dataset.index);
-            selectFeature(config.rowKeyGen(matches[idx]), true);
-            container.classList.remove('visible');
-        }
-    });
+        container.addEventListener('click', (e) => {
+            const item = e.target.closest('.search-item');
+            if (item) {
+                const cfg = levelsCfg[currentLevel];
+                const idx = parseInt(item.dataset.index);
+                selectFeature(cfg.rowKeyGen(matches[idx]), true);
+                container.classList.remove('visible');
+            }
+        });
 
-    document.getElementById('clear-search')?.addEventListener('click', clearSelection);
+        document.getElementById('clear-search')?.addEventListener('click', clearSelection);
+        _searchInitialized = true;
+    }
 }
+
 
 // Controls, View Transitions, and Initial Load
 (() => {
@@ -1309,9 +1377,12 @@ function populateSearch() {
                 }
                 updateDashboard();
                 setTimeout(() => {
-                    Object.values(mapViews).forEach(m => m.invalidateSize());
+                    Object.values(mapViews).forEach(m => {
+                        m.invalidateSize();
+                        m.setView([22.9734, 82.5], 4.5, { animate: false });
+                    });
                     containers.forEach(c => c.classList.remove('is-loading'));
-                }, 750);
+                }, 800);
             } else {
                 // Exiting Time Series: Sequence the layout first
                 tsTriggeredByMap = false; // Reset when leaving
@@ -1326,7 +1397,10 @@ function populateSearch() {
                     if (midHeader) midHeader.innerHTML = `${terms['mid'].label} (2050-2070)`;
 
                     updateDashboard();
-                    Object.values(mapViews).forEach(m => m.invalidateSize());
+                    Object.values(mapViews).forEach(m => {
+                        m.invalidateSize();
+                        m.setView([22.9734, 82.5], 4.5, { animate: false });
+                    });
                     containers.forEach(c => c.classList.remove('is-loading'));
                 }, 750);
             }
