@@ -1009,7 +1009,9 @@ body:not(.time-series-mode) .big-rect-placeholder {
     text-transform: uppercase;
     border-bottom: 2px solid var(--border-strong);
     white-space: nowrap;
-    overflow: hidden;
+    overflow: visible;
+    position: relative;
+    z-index: 100;
     text-overflow: ellipsis;
     padding: 0 0.75rem;
 }
