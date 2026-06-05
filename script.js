@@ -131,7 +131,7 @@ function buildLegendBar(cfg) {
 (() => {
     const startZoom = 4.5;
     const center = [22.9734, 82.5];
-    const tileUrl = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+    const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
     // Define custom level switcher control class using the 3D Soap Slider
     const LevelControl = L.Control.extend({
@@ -183,7 +183,7 @@ function buildLegendBar(cfg) {
         }).setView(center, startZoom);
         L.control.zoom({ position: 'bottomleft' }).addTo(m);
         L.tileLayer(tileUrl, {
-            attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a>'
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(m);
         mapViews[term] = m;
 
