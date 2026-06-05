@@ -1,0 +1,14 @@
+# Local data files
+JSONs/District_DATA.json
+JSONs/state_time_series_data.json
+
+# Local CLI executables
+antigravity
+antigravity.*.old
+
+# Third-party JS libraries
+assets/dom-to-image.min.js
+assets/html2canvas.min.js
+
+# Local CLI configuration
+.antigravitycli/
