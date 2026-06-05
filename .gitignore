@@ -1,13 +1,49 @@
 # Local data files
 JSONs/District_DATA.json
 JSONs/state_time_series_data.json
+JSONs/District_DATA.json.tmp
+JSONs/state_time_series_data.json.tmp
 
-# Local CLI executables
-antigravity
-antigravity.*.old
-
-# Assets directory
+# Assets directory (contains custom images, icons, and third-party JS libraries)
 assets/
 
-# Local CLI configuration
+# Local CLI configurations & Executables
 .antigravitycli/
+antigravity
+antigravity.*
+
+# System files & backups
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.bak
+*.tmp
+*.log
+
+# Editor/IDE settings
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sublime-project
+*.sublime-workspace
+
+# Python temp files & caches (in case python scripts are run locally)
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+venv/
+ENV/
+env/
+
+# Node.js dependencies & builds (in case bundlers are introduced)
+node_modules/
+dist/
+build/
+.parcel-cache/
+.npm/
