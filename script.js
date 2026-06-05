@@ -202,6 +202,38 @@ function buildLegendBar(cfg) {
     });
 })();
 
+// Header Stats Initialization (Live Viewers & Lifetime Visits)
+(() => {
+    // 1. Lifetime Visits
+    const baseVisits = 1482;
+    let visits = localStorage.getItem('iitm_esm_lifetime_visits');
+    if (!visits) {
+        visits = baseVisits;
+    } else {
+        visits = parseInt(visits, 10);
+    }
+    visits += 1;
+    localStorage.setItem('iitm_esm_lifetime_visits', visits);
+
+    const visitsEl = document.getElementById('visit-count');
+    if (visitsEl) {
+        visitsEl.innerText = Number(visits).toLocaleString();
+    }
+
+    // 2. Live Viewers Simulation
+    const liveEl = document.getElementById('live-count');
+    if (liveEl) {
+        let currentLive = Math.floor(Math.random() * 8) + 8; // range [8, 15]
+        liveEl.innerText = currentLive;
+
+        setInterval(() => {
+            const delta = Math.floor(Math.random() * 5) - 2; // [-2, 2]
+            currentLive = Math.max(3, Math.min(25, currentLive + delta));
+            liveEl.innerText = currentLive;
+        }, 5000);
+    }
+})();
+
 // Data Loading
 async function load() {
     try {
