@@ -148,7 +148,12 @@
                     </div>
                     <div class="ts-window ts-window-bar">
                         <div class="map-header" id="bar-graph-header">
-                            <span>Bar Graph</span>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span>Bar Graph</span>
+                                <button id="download-bar-chart" class="chart-download-btn" title="Download Bar Chart as PNG">
+                                    <img src="assets/icons/lucide-download.svg" alt="Download">
+                                </button>
+                            </div>
                             <div class="bar-controls-right">
                                 <div class="bar-filter-container">
                                     <button id="bar-filter-btn" class="bar-filter-btn">Filter States (All)</button>
@@ -211,6 +216,7 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <script src="assets/dom-to-image.min.js" defer></script>
     <script src="script.js?v=1.6" defer></script>
 </body>
 

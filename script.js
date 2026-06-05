@@ -133,6 +133,29 @@ function buildLegendBar(cfg) {
     const center = [22.9734, 82.5];
     const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
+    // Define custom download map control class
+    const DownloadControl = L.Control.extend({
+        options: { position: 'topleft' },
+        initialize: function (options) {
+            L.Util.setOptions(this, options);
+        },
+        onAdd: function () {
+            const term = this.options.term;
+            const div = L.DomUtil.create('div', 'leaflet-control leaflet-download-control');
+            div.innerHTML = `
+                <a class="leaflet-download-btn" href="#" title="Download Map as PNG" role="button" aria-label="Download Map as PNG">
+                    <img src="assets/icons/lucide-download.svg" alt="Download">
+                </a>
+            `;
+            div.addEventListener('click', (e) => {
+                e.preventDefault();
+                downloadMapPNG(term);
+            });
+            L.DomEvent.disableClickPropagation(div);
+            return div;
+        }
+    });
+
     // Define custom level switcher control class using the 3D Soap Slider
     const LevelControl = L.Control.extend({
         options: { position: 'topright' },
@@ -189,6 +212,9 @@ function buildLegendBar(cfg) {
 
         // Add the level control to this map
         new LevelControl().addTo(m);
+
+        // Add the download control to this map
+        new DownloadControl({ term: term }).addTo(m);
 
 
         // Inject loader once
@@ -1273,6 +1299,9 @@ function renderTimeSeriesHeader(container, stateName, varLabel, scenario) {
                     </div>
                 </div>
             </div>
+            <button id="download-line-chart" class="chart-download-btn" title="Download Line Chart as PNG" style="margin-left:12px;">
+                <img src="assets/icons/lucide-download.svg" alt="Download">
+            </button>
         </div>
     `;
 
@@ -1344,6 +1373,14 @@ function renderTimeSeriesHeader(container, stateName, varLabel, scenario) {
         tsSeason = e.target.value;
         updateDashboard();
     });
+
+    const dlLineBtn = container.querySelector('#download-line-chart');
+    if (dlLineBtn) {
+        dlLineBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            downloadChartPNG('time-series-chart', 'time-series-line-chart.png');
+        });
+    }
 }
 
 function populateSearch() {
@@ -1533,3 +1570,84 @@ function setupBarFilter() {
         if (filterMenu && !filterMenu.contains(e.target)) filterMenu.classList.remove('visible');
     });
 }
+
+// Export Helper Functions
+function downloadChartPNG(canvasId, filename) {
+    const originalCanvas = document.getElementById(canvasId);
+    if (!originalCanvas) return;
+
+    // Create a temporary canvas in memory to paint a solid white background
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = originalCanvas.width;
+    tempCanvas.height = originalCanvas.height;
+
+    const ctx = tempCanvas.getContext('2d');
+    
+    // Fill background with solid white
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+    
+    // Draw original transparent chart on top
+    ctx.drawImage(originalCanvas, 0, 0);
+
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = tempCanvas.toDataURL('image/png');
+    link.click();
+}
+
+function downloadMapPNG(term) {
+    const mapContainer = document.getElementById(`map-${term}-term`);
+    if (!mapContainer) return;
+    
+    // Temporarily hide map controls during capture so they don't block the map view
+    const controls = mapContainer.querySelectorAll('.leaflet-control-container');
+    controls.forEach(c => c.style.display = 'none');
+    
+    // Temporarily hide the basemap tile layer (streets, labels) for a clean vector shape export
+    const tilePane = mapContainer.querySelector('.leaflet-tile-pane');
+    if (tilePane) tilePane.style.display = 'none';
+    
+    // Temporarily force solid white background on map container to ensure export isn't transparent
+    const originalBg = mapContainer.style.background;
+    mapContainer.style.background = '#ffffff';
+    
+    domtoimage.toPng(mapContainer, {
+        width: mapContainer.clientWidth,
+        height: mapContainer.clientHeight,
+        bgcolor: '#ffffff', // Ensures a solid white background in output PNG
+        style: {
+            transform: 'none',
+            borderRadius: '0px'
+        }
+    })
+    .then((dataUrl) => {
+        const link = document.createElement('a');
+        link.download = `map-${term}-term.png`;
+        link.href = dataUrl;
+        link.click();
+        
+        // Restore controls, tile layer visibility, and background
+        controls.forEach(c => c.style.display = 'block');
+        if (tilePane) tilePane.style.display = 'block';
+        mapContainer.style.background = originalBg;
+    })
+    .catch((error) => {
+        console.error('oops, something went wrong with map download!', error);
+        // Restore on error
+        controls.forEach(c => c.style.display = 'block');
+        if (tilePane) tilePane.style.display = 'block';
+        mapContainer.style.background = originalBg;
+    });
+}
+
+// Setup static download listeners
+(() => {
+    const dlBarBtn = document.getElementById('download-bar-chart');
+    if (dlBarBtn) {
+        dlBarBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            downloadChartPNG('time-series-bar-chart', 'time-series-bar-chart.png');
+        });
+    }
+})();
