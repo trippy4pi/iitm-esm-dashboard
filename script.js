@@ -204,33 +204,56 @@ function buildLegendBar(cfg) {
 
 // Header Stats Initialization (Live Viewers & Lifetime Visits)
 (() => {
-    // 1. Lifetime Visits
-    const baseVisits = 1482;
-    let visits = localStorage.getItem('iitm_esm_lifetime_visits');
-    if (!visits) {
-        visits = baseVisits;
-    } else {
-        visits = parseInt(visits, 10);
-    }
-    visits += 1;
-    localStorage.setItem('iitm_esm_lifetime_visits', visits);
+    // Generate a simple unique session ID on page load
+    const sessionId = Math.random().toString(36).substring(2, 9);
 
-    const visitsEl = document.getElementById('visit-count');
-    if (visitsEl) {
-        visitsEl.innerText = Number(visits).toLocaleString();
-    }
+    // 1. Fetch Lifetime Visits from PHP backend
+    fetch('visits.php')
+        .then(res => {
+            if (!res.ok) throw new Error('Network response error');
+            return res.json();
+        })
+        .then(data => {
+            const visitsEl = document.getElementById('visit-count');
+            if (visitsEl && data.visits) {
+                visitsEl.innerText = Number(data.visits).toLocaleString();
+            }
+        })
+        .catch(err => {
+            console.warn('Failed to load real-time visits from PHP:', err);
+            // Fallback to offline localStorage if PHP is not responding
+            let visits = parseInt(localStorage.getItem('iitm_esm_lifetime_visits') || '1482', 10) + 1;
+            localStorage.setItem('iitm_esm_lifetime_visits', visits);
+            const visitsEl = document.getElementById('visit-count');
+            if (visitsEl) visitsEl.innerText = visits.toLocaleString();
+        });
 
-    // 2. Live Viewers Simulation
+    // 2. Live Viewers Heartbeat Polling via PHP backend
     const liveEl = document.getElementById('live-count');
     if (liveEl) {
-        let currentLive = Math.floor(Math.random() * 8) + 8; // range [8, 15]
-        liveEl.innerText = currentLive;
+        function sendHeartbeat() {
+            fetch(`heartbeat.php?sessionId=${sessionId}`)
+                .then(res => {
+                    if (!res.ok) throw new Error('Network response error');
+                    return res.json();
+                })
+                .then(data => {
+                    if (data.activeViewers) {
+                        liveEl.innerText = data.activeViewers;
+                    }
+                })
+                .catch(err => {
+                    console.warn('Heartbeat polling failed:', err);
+                    // Fallback to a mock simulation if PHP is not responding
+                    if (liveEl.innerText === '--' || liveEl.innerText === '') {
+                        liveEl.innerText = '1';
+                    }
+                });
+        }
 
-        setInterval(() => {
-            const delta = Math.floor(Math.random() * 5) - 2; // [-2, 2]
-            currentLive = Math.max(3, Math.min(25, currentLive + delta));
-            liveEl.innerText = currentLive;
-        }, 5000);
+        // Start heartbeat immediately, then ping every 20 seconds
+        sendHeartbeat();
+        setInterval(sendHeartbeat, 20000);
     }
 })();
 
