@@ -6,9 +6,8 @@ JSONs/state_time_series_data.json
 antigravity
 antigravity.*.old
 
-# Third-party JS libraries
-assets/dom-to-image.min.js
-assets/html2canvas.min.js
+# Assets directory
+assets/
 
 # Local CLI configuration
 .antigravitycli/
