@@ -1151,7 +1151,7 @@ body:not(.time-series-mode) .big-rect-placeholder {
 .legend-ticks {
     position: relative;
     height: 18px;
-    margin: 0 4px;
+    margin: 0 14px;
     font-size: 0.75rem;
     font-weight: 800;
 }
