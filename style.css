@@ -1777,6 +1777,14 @@ footer {
     text-align: center;
 }
 
+/* Hide mobile-only elements on desktop by default */
+.mobile-menu-toggle,
+.mobile-drawer,
+.mobile-drawer-overlay,
+.mobile-term-switcher {
+    display: none;
+}
+
 /* ==========================================
    RESPONSIVE DESIGN (TABLETS & MOBILE VIEWPORT)
    ========================================== */
@@ -1885,6 +1893,7 @@ footer {
 
     /* 4. Sliding Glassmorphic Drawer */
     .mobile-drawer-overlay {
+        display: block;
         position: fixed;
         inset: 0;
         z-index: 10010;
