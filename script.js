@@ -39,6 +39,147 @@ const tsSeasonLabels = {
     'djf': 'DJF'
 };
 
+function parseStateCSV(csvText) {
+    const lines = csvText.split(/\r?\n/);
+    if (lines.length < 2) return {};
+    
+    const headers = lines[0].split(',').map(h => h.trim());
+    const data = {};
+    
+    const metrics = ["tas", "pr", "tasmax", "tasmin", "ws"];
+    const seasons = ["annual", "mam", "jjas", "son", "djf"];
+    const scenarios = ["ssp126", "ssp245", "ssp370", "ssp585"];
+    
+    // Initialize structure
+    metrics.forEach(m => {
+        data[m] = {};
+        seasons.forEach(s => {
+            data[m][s] = {};
+            scenarios.forEach(sc => {
+                data[m][s][sc] = [];
+            });
+        });
+    });
+    
+    const seasonSuffixMap = {
+        'annual': 'Annual',
+        'mam': 'MAM',
+        'jjas': 'JJAS',
+        'son': 'SON',
+        'djf': 'DJF'
+    };
+    
+    // Precompute header mappings
+    const headerMapping = [];
+    metrics.forEach(m => {
+        seasons.forEach(s => {
+            scenarios.forEach(sc => {
+                const csvHeader = `cmip6_${m}_${sc}_${seasonSuffixMap[s]}`;
+                const hIdx = headers.indexOf(csvHeader);
+                if (hIdx !== -1) {
+                    headerMapping.push({
+                        metric: m,
+                        season: s,
+                        scenario: sc,
+                        colIndex: hIdx
+                    });
+                }
+            });
+        });
+    });
+    
+    const yearObjects = {};
+    const yearLists = {};
+    
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        const values = line.split(',');
+        if (values.length < headers.length) continue;
+        
+        const year = parseInt(values[0]);
+        const region = values[1].trim();
+        if (!year || !region) continue;
+        
+        for (let j = 0; j < headerMapping.length; j++) {
+            const map = headerMapping[j];
+            const valStr = values[map.colIndex];
+            const val = (valStr === '' || valStr === undefined) ? null : parseFloat(valStr);
+            
+            const key = `${map.metric}_${map.season}_${map.scenario}_${year}`;
+            if (!yearObjects[key]) {
+                yearObjects[key] = { year: year };
+                
+                const listKey = `${map.metric}_${map.season}_${map.scenario}`;
+                if (!yearLists[listKey]) yearLists[listKey] = [];
+                yearLists[listKey].push(year);
+            }
+            yearObjects[key][region] = val;
+        }
+    }
+    
+    metrics.forEach(m => {
+        seasons.forEach(s => {
+            scenarios.forEach(sc => {
+                const listKey = `${m}_${s}_${sc}`;
+                const years = yearLists[listKey] || [];
+                years.sort((a, b) => a - b);
+                
+                years.forEach(yr => {
+                    const key = `${m}_${s}_${sc}_${yr}`;
+                    data[m][s][sc].push(yearObjects[key]);
+                });
+            });
+        });
+    });
+    
+    return data;
+}
+
+async function loadStateTimeSeriesData() {
+    if (tsFullData) return tsFullData;
+    
+    try {
+        const resp = await fetch(`CSVs/cmip6_state_anomalies.csv?v=${Date.now()}`);
+        if (!resp.ok) throw new Error('CSV file not found');
+        const csvText = await resp.text();
+        tsFullData = parseStateCSV(csvText);
+        return tsFullData;
+    } catch (e) {
+        console.error('Error loading state time series CSV:', e);
+        throw e;
+    }
+}
+
+function clearTimeSeriesChartsAndMaps() {
+    const noDataOverlay = document.getElementById('no-data-overlay');
+    if (noDataOverlay) noDataOverlay.classList.add('visible');
+    
+    if (tsChart) { tsChart.destroy(); tsChart = null; }
+    if (tsBarChart) { tsBarChart.destroy(); tsBarChart = null; }
+    
+    tsPeriodMeans = {};
+    
+    const config = levelsCfg[currentLevel];
+    for (const key of ['near', 'mid', 'long']) {
+        if (geoLayers[key]) {
+            geoLayers[key].eachLayer(layer => {
+                const featureKey = config.keyGen(layer.feature.properties);
+                const isHighlighted = (lockedFeatureKey === featureKey);
+                layer.setStyle({
+                    fillColor: '#e2e8f0', // default gray
+                    fillOpacity: 1.0,
+                    color: '#000000',
+                    weight: isHighlighted ? 2.2 : 0.5,
+                    opacity: 1.0
+                });
+                layer.closeTooltip();
+            });
+        }
+    }
+}
+
 const stateAcronyms = {
     "ANDHRA PRADESH": "AP", "ARUNACHAL PRADESH": "AR", "ASSAM": "AS", "BIHAR": "BR",
     "CHANDIGARH": "CH", "CHHATTISGARH": "CG", "DADRA & NAGAR HAVELI & DAMAN & DIU": "DD",
@@ -73,7 +214,7 @@ const levelsCfg = {
     },
     state: {
         variables: 'JSONs/State_VARIABLES.json',
-        data: 'JSONs/state_time_series_data.json',
+        data: 'CSVs/cmip6_state_anomalies.csv',
         geojson: 'JSONs/state_ultra_optimized.geojson',
         keyGen: (props) => `${(props.STATE_UT || "").trim()}`.toLowerCase(),
         rowKeyGen: (row) => `${row.STATE_UT.trim()}`.toLowerCase(),
@@ -297,15 +438,24 @@ async function load() {
             rawData = _dataCache[currentLevel].data;
             datasetGeoJSON = _dataCache[currentLevel].geojson;
         } else {
-            const [vResp, dResp, gResp] = await Promise.all([
-                fetch(config.variables),
-                fetch(config.data),
-                fetch(config.geojson)
-            ]);
-
-            variablesConfig = await vResp.json();
-            rawData = await dResp.json();
-            datasetGeoJSON = await gResp.json();
+            if (currentLevel === 'state') {
+                const [vResp, gResp] = await Promise.all([
+                    fetch(config.variables),
+                    fetch(config.geojson)
+                ]);
+                variablesConfig = await vResp.json();
+                datasetGeoJSON = await gResp.json();
+                rawData = await loadStateTimeSeriesData();
+            } else {
+                const [vResp, dResp, gResp] = await Promise.all([
+                    fetch(config.variables),
+                    fetch(config.data),
+                    fetch(config.geojson)
+                ]);
+                variablesConfig = await vResp.json();
+                rawData = await dResp.json();
+                datasetGeoJSON = await gResp.json();
+            }
 
             _dataCache[currentLevel] = {
                 variables: variablesConfig,
@@ -477,9 +627,14 @@ function syncHover(featureKey, sourceTerm, isOver, latlng, source = 'map') {
         const layer = featureKey ? layers[featureKey] : null;
 
         if (!isOver || !featureKey) {
-            Object.values(layers).forEach(l => {
-                l.setStyle({ weight: 0.5, color: '#000000' });
-                l.closeTooltip();
+            Object.keys(layers).forEach(k => {
+                const l = layers[k];
+                const isLocked = (lockedFeatureKey === k);
+                l.setStyle({ 
+                    weight: isLocked ? 2.2 : 0.5, 
+                    color: '#000000' 
+                });
+                if (!isLocked) l.closeTooltip();
             });
         } else if (layer) {
             layer.setStyle({ weight: 2.2, color: '#000000' });
@@ -605,7 +760,7 @@ async function updateDashboard() {
                     fillColor: getColor(tsVal, scenCfg),
                     fillOpacity: 1.0,
                     color: '#000000',
-                    weight: 0.5,
+                    weight: (lockedFeatureKey === featureKey) ? 2.2 : 0.5,
                     opacity: 1.0
                 });
 
@@ -625,7 +780,7 @@ async function updateDashboard() {
                     fillColor: getColor(val, scenCfg),
                     fillOpacity: 1.0,
                     color: '#000000',
-                    weight: 0.5,
+                    weight: (lockedFeatureKey === featureKey) ? 2.2 : 0.5,
                     opacity: 1.0
                 });
                 const formattedVal = val !== null ? (val > 0 ? `+${val.toFixed(2)}` : val.toFixed(2)) : 'N/A';
@@ -686,7 +841,8 @@ async function updateTimeSeriesChart() {
     let displayStateName = "INDIA";
     let stateKey = null;
     if (lockedFeatureKey) {
-        const row = window.dataLookup[lockedFeatureKey];
+        const lookupKey = lockedFeatureKey.includes('|') ? lockedFeatureKey.split('|')[0] : lockedFeatureKey;
+        const row = window.dataLookup[lookupKey];
         if (row && row.STATE_UT) {
             stateKey = row.STATE_UT.toUpperCase();
             displayStateName = row.STATE_UT;
@@ -708,14 +864,11 @@ async function updateTimeSeriesChart() {
     // 3. Load Unified Data if needed
     if (!tsFullData) {
         try {
-            const resp = await fetch(`JSONs/state_time_series_data.json?v=${Date.now()}`);
-            if (!resp.ok) throw new Error('File not found');
-            tsFullData = await resp.json();
+            tsFullData = await loadStateTimeSeriesData();
             noDataOverlay.classList.remove('visible');
         } catch (e) {
             console.error('Time series fetch error:', e);
-            noDataOverlay.classList.add('visible');
-            if (tsChart) { tsChart.destroy(); tsChart = null; }
+            clearTimeSeriesChartsAndMaps();
             return;
         }
     }
@@ -727,8 +880,7 @@ async function updateTimeSeriesChart() {
 
     const rawArray = tsFullData[jsKey]?.[seasonKey]?.[scenKey];
     if (!rawArray || !rawArray.length) {
-        noDataOverlay.classList.add('visible');
-        if (tsChart) { tsChart.destroy(); tsChart = null; }
+        clearTimeSeriesChartsAndMaps();
         return;
     }
 
@@ -1332,6 +1484,7 @@ function renderTimeSeriesHeader(container, stateName, varLabel, scenario) {
                         tsStartYear = y;
                         trigger.innerText = y;
                         popup.classList.remove('visible');
+                        updateDashboard();
                         // Auto jump
                         const endTrigger = container.querySelector('#end-year-trigger');
                         setTimeout(() => endTrigger.click(), 150);
