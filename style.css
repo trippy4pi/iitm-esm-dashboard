@@ -1778,9 +1778,7 @@ footer {
 }
 
 /* Hide mobile-only elements on desktop by default */
-.mobile-menu-toggle,
-.mobile-drawer,
-.mobile-drawer-overlay,
+.mobile-filter-accordion,
 .mobile-term-switcher {
     display: none;
 }
@@ -1849,277 +1847,220 @@ footer {
         font-weight: 800;
     }
 
-    /* 3. Hamburger Button */
-    .mobile-menu-toggle {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        width: 24px;
-        height: 16px;
-        background: transparent;
-        border: none;
-        cursor: pointer;
-        padding: 0;
-        z-index: 10020;
-    }
-
-    .mobile-menu-toggle .bar {
-        width: 100%;
-        height: 2.2px;
-        background-color: #ffffff;
-        border-radius: 1px;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    /* X Animation for Hamburger when drawer is open */
-    body.mobile-menu-open .mobile-menu-toggle .bar:nth-child(1) {
-        transform: translateY(7px) rotate(45deg);
-    }
-
-    body.mobile-menu-open .mobile-menu-toggle .bar:nth-child(2) {
-        opacity: 0;
-        transform: translateX(-10px);
-    }
-
-    body.mobile-menu-open .mobile-menu-toggle .bar:nth-child(3) {
-        transform: translateY(-7px) rotate(-45deg);
-    }
-
     /* Hide desktop-only layout pieces */
     header #desktop-search-container,
     header #controls-panel {
         display: none !important;
     }
 
-    /* 4. Sliding Glassmorphic Drawer */
-    .mobile-drawer-overlay {
+    /* 4. Collapsible Controls Accordion Panel */
+    .mobile-filter-accordion {
         display: block;
-        position: fixed;
-        inset: 0;
-        z-index: 10010;
-        background: rgba(15, 23, 42, 0.55);
-        backdrop-filter: blur(4px);
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.35s ease;
+        width: calc(100% - 2.4rem);
+        max-width: 440px;
+        margin: 12px auto 6px;
+        background: #ffffff;
+        border: 2.2px solid #000000;
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        overflow: hidden;
+        transition: box-shadow 0.3s ease;
+        z-index: 100;
+        position: relative;
     }
 
-    body.mobile-menu-open .mobile-drawer-overlay {
-        opacity: 1;
-        pointer-events: auto;
+    .mobile-filter-accordion.open {
+        overflow: visible;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
     }
 
-    .mobile-drawer {
-        position: fixed;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        width: min(320px, 85vw);
-        z-index: 10015;
-        background: rgba(12, 74, 110, 0.88);
-        backdrop-filter: blur(24px) saturate(160%);
-        -webkit-backdrop-filter: blur(24px) saturate(160%);
-        border-left: 1px solid rgba(255, 255, 255, 0.15);
-        box-shadow: -8px 0 32px rgba(0, 0, 0, 0.35);
-        display: flex;
-        flex-direction: column;
-        transform: translateX(100%);
-        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-        padding: 0;
-    }
-
-    body.mobile-menu-open .mobile-drawer {
-        transform: translateX(0);
-    }
-
-    .drawer-header {
+    .filter-accordion-toggle {
+        width: 100%;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 1.5rem 1.25rem 1rem;
-        border-bottom: 1.5px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .drawer-header h2 {
-        color: #ffffff;
-        font-size: 1.2rem;
+        padding: 12px 16px;
+        background: #f8fafc;
+        border: none;
+        font-family: inherit;
+        font-size: 0.82rem;
         font-weight: 850;
         text-transform: uppercase;
-        margin: 0;
         letter-spacing: 0.02em;
-    }
-
-    .drawer-close {
-        background: rgba(255, 255, 255, 0.1);
-        border: none;
-        color: #ffffff;
-        font-size: 0.9rem;
-        font-weight: 800;
+        color: #0f172a;
         cursor: pointer;
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background 0.2s ease;
+        border-bottom: 2.2px solid #000000;
     }
 
-    .drawer-close:hover {
-        background: rgba(239, 68, 68, 0.2);
-        color: #ef4444;
+    .filter-accordion-toggle .chevron {
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        color: #64748b;
     }
 
-    .drawer-body {
-        flex: 1;
-        overflow-y: auto;
-        padding: 1.5rem 1.25rem;
+    .mobile-filter-accordion.open .filter-accordion-toggle .chevron {
+        transform: rotate(180deg);
+        color: #000000;
+    }
+
+    .filter-accordion-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease;
         display: flex;
         flex-direction: column;
-        gap: 1.8rem;
+        align-items: center;
+        gap: 16px;
+        padding: 0 16px;
     }
 
-    /* Stacking controls inside mobile drawer */
-    .drawer-body .search-box {
+    .mobile-filter-accordion.open .filter-accordion-content {
+        max-height: 320px;
+        padding: 20px 16px;
+        overflow: visible;
+    }
+
+    /* Accordion Controls Alignment & Desktop Looks Match */
+    .filter-accordion-content .search-box {
         width: 100% !important;
+        max-width: 300px !important;
         min-width: 0 !important;
         margin-bottom: 0;
-        height: 40px;
+        height: 36px;
         background: #ffffff;
         border: 1.5px solid #000000;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 50px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        display: flex;
     }
 
-    .drawer-body .search-box:focus-within {
+    .filter-accordion-content .search-box:focus-within {
         width: 100% !important;
+        max-width: 300px !important;
         border-color: #38bdf8;
     }
 
-    .drawer-body .header-controls {
+    .filter-accordion-content .header-controls {
         display: flex !important;
         flex-direction: column !important;
-        align-items: stretch !important;
-        gap: 1.2rem !important;
-    }
-
-    .drawer-body .variable-selector {
+        align-items: center !important;
+        gap: 16px !important;
         width: 100%;
     }
 
-    .drawer-body .custom-dropdown {
+    .filter-accordion-content .variable-selector {
         width: 100%;
-        display: block;
+        display: flex;
+        justify-content: center;
     }
 
-    .drawer-body #metric-dropdown-btn {
+    .filter-accordion-content .custom-dropdown {
         width: 100%;
-        height: 40px;
-        border-color: #ffffff;
-        background: rgba(255, 255, 255, 0.15);
-        color: #ffffff;
-        box-shadow: none;
-        font-size: 0.8rem;
-        font-weight: 800;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23ffffff'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='4' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+        max-width: 300px;
     }
 
-    /* Accordion override for Mobile custom-dropdown-menu */
-    .drawer-body .custom-dropdown-menu {
-        position: static !important;
+    .filter-accordion-content #metric-dropdown-btn {
         width: 100% !important;
-        background: rgba(15, 23, 42, 0.45) !important;
-        border: 1.5px solid rgba(255, 255, 255, 0.2) !important;
-        margin-top: 8px !important;
-        box-shadow: none !important;
-        border-radius: 10px !important;
-        padding: 4px 0 !important;
-    }
-
-    .drawer-body .dropdown-item {
-        color: #ffffff !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .drawer-body .dropdown-item:last-child {
-        border-bottom: none;
-    }
-
-    .drawer-body .dropdown-item .chevron-right {
-        transform: rotate(90deg);
-        color: rgba(255, 255, 255, 0.6);
-    }
-
-    .drawer-body .dropdown-item.open-submenu .chevron-right {
-        transform: rotate(270deg);
-    }
-
-    /* Accordion Submenu styling inside drawer */
-    .drawer-body .dropdown-submenu {
-        position: static !important;
-        width: 100% !important;
-        margin: 6px 0 0 0 !important;
-        background: rgba(15, 23, 42, 0.6) !important;
-        border: 1.5px dashed rgba(255, 255, 255, 0.15) !important;
-        box-shadow: none !important;
-        border-radius: 8px !important;
-        padding: 4px 0 !important;
-    }
-
-    .drawer-body .dropdown-submenu::before {
-        display: none !important; /* Remove desktop hover bridge */
-    }
-
-    .drawer-body .submenu-item {
-        color: rgba(255, 255, 255, 0.8) !important;
-        font-size: 0.78rem !important;
-        padding: 8px 16px !important;
-    }
-
-    .drawer-body .submenu-item.active {
-        background: rgba(34, 197, 94, 0.2) !important;
-        color: #22c55e !important;
-        font-weight: 800;
-    }
-
-    .drawer-body .dropdown-submenu.coming-soon {
-        border-color: rgba(255, 255, 255, 0.1) !important;
-    }
-
-    .drawer-body .submenu-info {
-        color: rgba(255, 255, 255, 0.4) !important;
-    }
-
-    /* Scenario radio button stack */
-    .drawer-body .scenario-radios {
-        width: 100% !important;
-        height: auto !important;
-        display: flex !important;
-        flex-direction: column !important;
-        background: rgba(15, 23, 42, 0.3) !important;
-        border-color: rgba(255, 255, 255, 0.2) !important;
-        padding: 6px !important;
-        gap: 4px !important;
-        border-radius: 12px !important;
-    }
-
-    .drawer-body .scenario-radios::before {
-        display: none !important; /* Remove sliding bar in mobile layout to stack clean */
-    }
-
-    .drawer-body .radio-label {
-        height: 38px !important;
-        font-size: 0.8rem !important;
-        font-weight: 700 !important;
-        color: rgba(255, 255, 255, 0.7) !important;
-        border-radius: 8px !important;
-        transition: all 0.2s ease !important;
-        border: 1.5px solid transparent !important;
-    }
-
-    .drawer-body .radio-label:has(input:checked) {
+        height: 36px;
+        border: 1.5px solid #000000 !important;
         background: #ffffff !important;
-        color: #0c4a6e !important;
-        border-color: #000000 !important;
+        color: #0f172a !important;
+        font-size: 0.8rem;
+        font-weight: 750;
+        border-radius: 10px;
+        box-shadow: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%230f172a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='4' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+    }
+
+    .filter-accordion-content .custom-dropdown-menu {
+        position: absolute !important;
+        top: 100% !important;
+        left: 0 !important;
+        width: 100% !important;
+        max-width: 300px !important;
+        background: #ffffff !important;
+        border: 1.5px solid #000000 !important;
+        border-radius: 10px !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+        z-index: 1200;
+        margin-top: 6px !important;
+        display: none;
+    }
+
+    .filter-accordion-content .custom-dropdown.open .custom-dropdown-menu {
+        display: flex !important;
+    }
+
+    .filter-accordion-content .dropdown-submenu {
+        position: absolute !important;
+        top: -5px !important;
+        left: 100% !important;
+        margin-left: 6px !important;
+        width: 100% !important;
+        max-width: 200px !important;
+        background: #ffffff !important;
+        border: 1.5px solid #000000 !important;
+        border-radius: 10px !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    }
+
+    .filter-accordion-content .dropdown-item {
+        color: #0f172a !important;
+        border-bottom: none !important;
+    }
+
+    .filter-accordion-content .submenu-item {
+        color: #0f172a !important;
+        font-size: 0.8rem !important;
+    }
+
+    .filter-accordion-content .submenu-item.active {
+        background: rgba(34, 197, 94, 0.1) !important;
+        color: #16a34a !important;
+    }
+
+    /* Keep the horizontal sliding radios look exactly as desktop */
+    .filter-accordion-content .scenario-radios {
+        width: 100% !important;
+        max-width: 300px !important;
+        height: 36px !important;
+        display: flex !important;
+        flex-direction: row !important;
+        background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%) !important;
+        border: 1.5px solid #000000 !important;
+        border-radius: 12px !important;
+        position: relative !important;
+        padding: 3px !important;
+    }
+
+    .filter-accordion-content .scenario-radios::before {
+        display: block !important; /* Restore sliding bar */
+        content: '';
+        position: absolute;
+        top: 3px;
+        bottom: 3px;
+        width: calc(25% - 4.5px);
+        background: #ffffff;
+        border: 1px solid #000000;
+        border-radius: 9px;
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        z-index: 0;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    }
+
+    .filter-accordion-content .radio-label {
+        height: 100% !important;
+        font-size: 0.72rem !important;
+        font-weight: 500 !important;
+        color: #0f172a !important;
+        border: none !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+    }
+
+    .filter-accordion-content .radio-label:has(input:checked) {
+        background: transparent !important;
+        color: #000000 !important;
+        font-weight: 800 !important;
     }
 
     /* 5. Mobile Term Switcher (Spatial Carousel Control) */

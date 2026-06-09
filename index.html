@@ -14,7 +14,7 @@
         rel="stylesheet">
     <title>IITM-ESM Dashboard</title>
     <link rel="icon" type="image/x-icon" href="assets/favicon.png">
-    <link rel="stylesheet" href="style.css?v=2.1">
+    <link rel="stylesheet" href="style.css?v=3.0">
     <style>
         /* NUCLEAR FOCUS RESET (Bypasses CSS Cache) */
         *,
@@ -144,13 +144,6 @@
                         <span>SSP585</span></label>
                 </div>
             </div>
-
-            <!-- Mobile Menu Toggle Hamburger -->
-            <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle Menu">
-                <span class="bar"></span>
-                <span class="bar"></span>
-                <span class="bar"></span>
-            </button>
         </div>
     </header>
 
@@ -161,6 +154,19 @@
             <div class="plasma-blob blob-2"></div>
             <div class="plasma-blob blob-3"></div>
             <div class="plasma-blob blob-4"></div>
+        </div>
+
+        <!-- Mobile Collapsible Controls Panel -->
+        <div class="mobile-filter-accordion" id="mobile-filter-accordion">
+            <button class="filter-accordion-toggle" id="filter-accordion-toggle">
+                <span>Dashboard Controls</span>
+                <svg class="chevron" viewBox="0 0 24 24" width="16" height="16">
+                    <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <div class="filter-accordion-content" id="filter-accordion-content">
+                <!-- Controls will be moved here dynamically on mobile -->
+            </div>
         </div>
 
         <!-- Mobile Term Switcher for Spatial View Carousel -->
@@ -255,22 +261,10 @@
         </div>
     </footer>
 
-    <!-- Mobile Settings Drawer -->
-    <div class="mobile-drawer-overlay" id="mobile-drawer-overlay"></div>
-    <div class="mobile-drawer" id="mobile-drawer">
-        <div class="drawer-header">
-            <h2>Dashboard Controls</h2>
-            <button class="drawer-close" id="drawer-close" aria-label="Close Settings">✕</button>
-        </div>
-        <div class="drawer-body">
-            <!-- Controls will be moved here dynamically on mobile -->
-        </div>
-    </div>
-
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js" defer></script>
-    <script src="script.js?v=2.0" defer></script>
+    <script src="script.js?v=3.0" defer></script>
 </body>
 
 </html>

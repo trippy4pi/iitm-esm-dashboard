@@ -2089,53 +2089,46 @@ checkCMIP7Availability();
 
 // Responsive & Mobile Layout Logic
 (() => {
-    const mobileToggle = document.getElementById('mobile-menu-toggle');
-    const mobileDrawer = document.getElementById('mobile-drawer');
-    const drawerOverlay = document.getElementById('mobile-drawer-overlay');
-    const drawerClose = document.getElementById('drawer-close');
+    const accordion = document.getElementById('mobile-filter-accordion');
+    const toggleBtn = document.getElementById('filter-accordion-toggle');
+    const accordionContent = document.getElementById('filter-accordion-content');
     const mapsRow = document.querySelector('.maps-row');
     const termSwitcher = document.getElementById('term-switcher');
 
-    if (!mobileToggle || !mobileDrawer || !drawerOverlay || !drawerClose) return;
+    if (!accordion || !toggleBtn || !accordionContent) return;
 
-    // Toggle Mobile Drawer
-    function openDrawer() {
-        document.body.classList.add('mobile-menu-open');
-    }
-    function closeDrawer() {
-        document.body.classList.remove('mobile-menu-open');
-    }
-
-    mobileToggle.addEventListener('click', (e) => {
+    // Toggle Accordion Panel
+    toggleBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (document.body.classList.contains('mobile-menu-open')) {
-            closeDrawer();
-        } else {
-            openDrawer();
-        }
+        const isOpen = accordion.classList.toggle('open');
+        
+        // Trigger map invalidation after toggle animation to keep views sync'd
+        setTimeout(() => {
+            if (typeof mapViews !== 'undefined') {
+                Object.values(mapViews).forEach(m => {
+                    if (m) m.invalidateSize();
+                });
+            }
+        }, 350);
     });
-
-    drawerClose.addEventListener('click', closeDrawer);
-    drawerOverlay.addEventListener('click', closeDrawer);
 
     // Dynamic Controls Reshuffle based on screen width
     function handleResponsiveLayout() {
         const isMobile = window.innerWidth <= 1024;
         const searchContainer = document.getElementById('desktop-search-container');
         const controlsPanel = document.getElementById('controls-panel');
-        const drawerBody = mobileDrawer.querySelector('.drawer-body');
         const headerInner = document.querySelector('.header-inner');
         const viewToggleArea = document.getElementById('view-toggle-area');
 
         if (!searchContainer || !controlsPanel) return;
 
         if (isMobile) {
-            if (drawerBody) {
-                if (!drawerBody.contains(searchContainer)) {
-                    drawerBody.appendChild(searchContainer);
+            if (accordionContent) {
+                if (!accordionContent.contains(searchContainer)) {
+                    accordionContent.appendChild(searchContainer);
                 }
-                if (!drawerBody.contains(controlsPanel)) {
-                    drawerBody.appendChild(controlsPanel);
+                if (!accordionContent.contains(controlsPanel)) {
+                    accordionContent.appendChild(controlsPanel);
                 }
             }
             // In Spatial View, show term switcher
@@ -2149,7 +2142,7 @@ checkCMIP7Availability();
                 headerInner.appendChild(searchContainer);
                 headerInner.appendChild(controlsPanel);
             }
-            closeDrawer();
+            accordion.classList.remove('open');
             if (termSwitcher) {
                 termSwitcher.style.display = 'none';
             }
