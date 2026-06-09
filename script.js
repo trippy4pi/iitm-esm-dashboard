@@ -2093,7 +2093,8 @@ checkCMIP7Availability();
     const toggleBtn = document.getElementById('filter-accordion-toggle');
     const accordionContent = document.getElementById('filter-accordion-content');
     const mapsRow = document.querySelector('.maps-row');
-    const termSwitcher = document.getElementById('term-switcher');
+    const prevBtn = document.getElementById('carousel-prev-btn');
+    const nextBtn = document.getElementById('carousel-next-btn');
 
     if (!accordion || !toggleBtn || !accordionContent) return;
 
@@ -2128,11 +2129,6 @@ checkCMIP7Availability();
                 accordionContent.appendChild(searchContainer);
                 accordionContent.appendChild(controlsPanel);
             }
-            // In Spatial View, show term switcher
-            const isTimeSeries = document.body.classList.contains('time-series-mode');
-            if (termSwitcher) {
-                termSwitcher.style.display = isTimeSeries ? 'none' : 'flex';
-            }
         } else {
             if (headerInner) {
                 // Return elements to header in brand -> toggle -> search -> controls sequence
@@ -2141,9 +2137,6 @@ checkCMIP7Availability();
                 headerInner.appendChild(controlsPanel);
             }
             accordion.classList.remove('open');
-            if (termSwitcher) {
-                termSwitcher.style.display = 'none';
-            }
         }
 
         // Trigger map invalidation to let Leaflet update its bounds
@@ -2153,65 +2146,90 @@ checkCMIP7Availability();
                     if (m) m.invalidateSize();
                 });
             }
+            if (isMobile) {
+                updateCarouselArrows();
+            }
         }, 300);
     }
 
-    // Carousel Swipe / Term Switcher Syncing
-    if (termSwitcher && mapsRow) {
-        const termButtons = termSwitcher.querySelectorAll('.term-btn');
-        
-        termButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const targetId = btn.getAttribute('data-target');
-                const targetEl = document.getElementById(targetId);
-                if (targetEl) {
-                    termButtons.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
+    // Carousel Swipe / Navigation Arrows Syncing
+    const termsList = ['near-term', 'mid-term', 'long-term'];
 
-                    // Scroll the container to target element
-                    mapsRow.scrollTo({
-                        left: targetEl.offsetLeft - mapsRow.offsetLeft - 12,
-                        behavior: 'smooth'
-                    });
+    function updateCarouselArrows() {
+        const isMobile = window.innerWidth <= 1024;
+        if (!isMobile || !mapsRow || !prevBtn || !nextBtn) return;
 
-                    // Invalidate Leaflet map size after scroll finishes
-                    setTimeout(() => {
-                        const termKey = targetId.split('-')[0]; // 'near', 'mid', 'long'
-                        if (typeof mapViews !== 'undefined' && mapViews[termKey]) {
-                            mapViews[termKey].invalidateSize();
-                        }
-                    }, 400);
-                }
-            });
+        const scrollLeft = mapsRow.scrollLeft;
+        const width = mapsRow.clientWidth || window.innerWidth;
+        const activeIndex = Math.round(scrollLeft / width);
+
+        // Hide/fade prev button at index 0
+        if (activeIndex === 0) {
+            prevBtn.style.opacity = '0';
+            prevBtn.style.pointerEvents = 'none';
+        } else {
+            prevBtn.style.opacity = '1';
+            prevBtn.style.pointerEvents = 'auto';
+        }
+
+        // Hide/fade next button at index 2 (last)
+        if (activeIndex >= 2) {
+            nextBtn.style.opacity = '0';
+            nextBtn.style.pointerEvents = 'none';
+        } else {
+            nextBtn.style.opacity = '1';
+            nextBtn.style.pointerEvents = 'auto';
+        }
+
+        // Trigger map invalidation for active viewport map
+        const termId = termsList[activeIndex];
+        if (termId) {
+            const termKey = termId.split('-')[0];
+            if (typeof mapViews !== 'undefined' && mapViews[termKey]) {
+                mapViews[termKey].invalidateSize();
+            }
+        }
+    }
+
+    if (mapsRow && prevBtn && nextBtn) {
+        // Navigate prev
+        prevBtn.addEventListener('click', () => {
+            const scrollLeft = mapsRow.scrollLeft;
+            const width = mapsRow.clientWidth || window.innerWidth;
+            const activeIndex = Math.round(scrollLeft / width);
+            const prevIndex = Math.max(0, activeIndex - 1);
+            const targetEl = document.getElementById(termsList[prevIndex]);
+            if (targetEl) {
+                mapsRow.scrollTo({
+                    left: targetEl.offsetLeft - mapsRow.offsetLeft - 12,
+                    behavior: 'smooth'
+                });
+                setTimeout(updateCarouselArrows, 400);
+            }
         });
 
-        // Sync Carousel Swipe -> Switcher Button Active
+        // Navigate next
+        nextBtn.addEventListener('click', () => {
+            const scrollLeft = mapsRow.scrollLeft;
+            const width = mapsRow.clientWidth || window.innerWidth;
+            const activeIndex = Math.round(scrollLeft / width);
+            const nextIndex = Math.min(2, activeIndex + 1);
+            const targetEl = document.getElementById(termsList[nextIndex]);
+            if (targetEl) {
+                mapsRow.scrollTo({
+                    left: targetEl.offsetLeft - mapsRow.offsetLeft - 12,
+                    behavior: 'smooth'
+                });
+                setTimeout(updateCarouselArrows, 400);
+            }
+        });
+
+        // Sync Carousel Swipe -> Update Arrows
         let scrollTimeout;
         mapsRow.addEventListener('scroll', () => {
             clearTimeout(scrollTimeout);
             scrollTimeout = setTimeout(() => {
-                const isMobile = window.innerWidth <= 1024;
-                if (!isMobile) return;
-
-                const scrollLeft = mapsRow.scrollLeft;
-                const width = mapsRow.clientWidth || window.innerWidth;
-                const activeIndex = Math.round(scrollLeft / width);
-
-                const termsList = ['near-term', 'mid-term', 'long-term'];
-                const targetId = termsList[activeIndex];
-
-                if (targetId) {
-                    termButtons.forEach(btn => {
-                        const isMatch = btn.getAttribute('data-target') === targetId;
-                        btn.classList.toggle('active', isMatch);
-                    });
-
-                    // Invalidate active map
-                    const termKey = targetId.split('-')[0];
-                    if (typeof mapViews !== 'undefined' && mapViews[termKey]) {
-                        mapViews[termKey].invalidateSize();
-                    }
-                }
+                updateCarouselArrows();
             }, 100);
         });
     }
@@ -2219,15 +2237,4 @@ checkCMIP7Availability();
     // Run layout adjustments on resize & load
     window.addEventListener('resize', handleResponsiveLayout);
     handleResponsiveLayout();
-
-    // Hook into View Mode Toggle logic to toggle switcher display
-    const viewToggle = document.getElementById('view-mode-toggle');
-    if (viewToggle) {
-        viewToggle.addEventListener('change', () => {
-            const isTimeSeries = viewToggle.checked;
-            if (window.innerWidth <= 1024 && termSwitcher) {
-                termSwitcher.style.display = isTimeSeries ? 'none' : 'flex';
-            }
-        });
-    }
 })();

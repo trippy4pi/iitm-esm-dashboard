@@ -14,7 +14,7 @@
         rel="stylesheet">
     <title>IITM-ESM Dashboard</title>
     <link rel="icon" type="image/x-icon" href="assets/favicon.png">
-    <link rel="stylesheet" href="style.css?v=3.0">
+    <link rel="stylesheet" href="style.css?v=4.0">
     <style>
         /* NUCLEAR FOCUS RESET (Bypasses CSS Cache) */
         *,
@@ -169,74 +169,82 @@
             </div>
         </div>
 
-        <!-- Mobile Term Switcher for Spatial View Carousel -->
-        <div class="mobile-term-switcher" id="term-switcher">
-            <button class="term-btn active" data-target="near-term">Near-term</button>
-            <button class="term-btn" data-target="mid-term">Mid-term</button>
-            <button class="term-btn" data-target="long-term">Long-term</button>
-        </div>
+        <div class="carousel-wrapper">
+            <!-- Mobile navigation arrows -->
+            <button class="carousel-nav-btn prev-btn" id="carousel-prev-btn" aria-label="Previous Map">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
 
-        <div class="maps-row">
-            <div class="map-container" id="near-term">
-                <div class="map-header" id="near-term-header">Near-term (2025-2036)</div>
-                <div id="map-near-term" class="map-view"></div>
-                <div class="legend" id="legend-near">
-                    <div class="legend-title">Legend</div>
-                    <div class="legend-scale" id="scale-near"></div>
-                    <div class="legend-ticks" id="ticks-near"></div>
-                    <div class="legend-labels"></div>
-                </div>
-            </div>
-            <div class="map-container" id="mid-term">
-                <div class="map-header" id="mid-term-header">Mid-term (2050-2070)</div>
-                <div id="map-mid-term" class="map-view"></div>
-                <div class="big-rect-placeholder">
-                    <div class="ts-window ts-window-line">
-                        <canvas id="time-series-chart"></canvas>
+            <div class="maps-row">
+                <div class="map-container" id="near-term">
+                    <div class="map-header" id="near-term-header">Near-term (2025-2036)</div>
+                    <div id="map-near-term" class="map-view"></div>
+                    <div class="legend" id="legend-near">
+                        <div class="legend-title">Legend</div>
+                        <div class="legend-scale" id="scale-near"></div>
+                        <div class="legend-ticks" id="ticks-near"></div>
+                        <div class="legend-labels"></div>
                     </div>
-                    <div class="ts-window ts-window-bar">
-                        <div class="map-header" id="bar-graph-header">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span>Bar Graph</span>
-                                <button id="download-bar-chart" class="chart-download-btn" title="Download Bar Chart as PNG">
-                                    <img src="assets/icons/lucide-download.svg" alt="Download">
-                                </button>
-                            </div>
-                            <div class="bar-controls-right">
-                                <div class="bar-filter-container">
-                                    <button id="bar-filter-btn" class="bar-filter-btn">Filter States (All)</button>
-                                    <div id="bar-filter-menu" class="bar-filter-menu">
-                                        <div id="filter-states-list" class="filter-states-list"></div>
-                                    </div>
-                                </div>
-                                <select id="bar-sort-select" class="bar-sort-dropdown">
-                                    <option value="az">Alphabetical A-Z</option>
-                                    <option value="za">Alphabetical Z-A</option>
-                                    <option value="asc">Low to High</option>
-                                    <option value="desc">High to Low</option>
-                                </select>
-                            </div>
+                </div>
+                <div class="map-container" id="mid-term">
+                    <div class="map-header" id="mid-term-header">Mid-term (2050-2070)</div>
+                    <div id="map-mid-term" class="map-view"></div>
+                    <div class="big-rect-placeholder">
+                        <div class="ts-window ts-window-line">
+                            <canvas id="time-series-chart"></canvas>
                         </div>
-                        <canvas id="time-series-bar-chart"></canvas>
+                        <div class="ts-window ts-window-bar">
+                            <div class="map-header" id="bar-graph-header">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span>Bar Graph</span>
+                                    <button id="download-bar-chart" class="chart-download-btn" title="Download Bar Chart as PNG">
+                                        <img src="assets/icons/lucide-download.svg" alt="Download">
+                                    </button>
+                                </div>
+                                <div class="bar-controls-right">
+                                    <div class="bar-filter-container">
+                                        <button id="bar-filter-btn" class="bar-filter-btn">Filter States (All)</button>
+                                        <div id="bar-filter-menu" class="bar-filter-menu">
+                                            <div id="filter-states-list" class="filter-states-list"></div>
+                                        </div>
+                                    </div>
+                                    <select id="bar-sort-select" class="bar-sort-dropdown">
+                                        <option value="az">Alphabetical A-Z</option>
+                                        <option value="za">Alphabetical Z-A</option>
+                                        <option value="asc">Low to High</option>
+                                        <option value="desc">High to Low</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <canvas id="time-series-bar-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="legend" id="legend-mid">
+                        <div class="legend-title">Legend</div>
+                        <div class="legend-scale" id="scale-mid"></div>
+                        <div class="legend-ticks" id="ticks-mid"></div>
+                        <div class="legend-labels"></div>
                     </div>
                 </div>
-                <div class="legend" id="legend-mid">
-                    <div class="legend-title">Legend</div>
-                    <div class="legend-scale" id="scale-mid"></div>
-                    <div class="legend-ticks" id="ticks-mid"></div>
-                    <div class="legend-labels"></div>
+                <div class="map-container" id="long-term">
+                    <div class="map-header" id="long-term-header">Long-term (2080-2100)</div>
+                    <div id="map-long-term" class="map-view"></div>
+                    <div class="legend" id="legend-long">
+                        <div class="legend-title">Legend</div>
+                        <div class="legend-scale" id="scale-long"></div>
+                        <div class="legend-ticks" id="ticks-long"></div>
+                        <div class="legend-labels"></div>
+                    </div>
                 </div>
             </div>
-            <div class="map-container" id="long-term">
-                <div class="map-header" id="long-term-header">Long-term (2080-2100)</div>
-                <div id="map-long-term" class="map-view"></div>
-                <div class="legend" id="legend-long">
-                    <div class="legend-title">Legend</div>
-                    <div class="legend-scale" id="scale-long"></div>
-                    <div class="legend-ticks" id="ticks-long"></div>
-                    <div class="legend-labels"></div>
-                </div>
-            </div>
+
+            <button class="carousel-nav-btn next-btn" id="carousel-next-btn" aria-label="Next Map">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
         </div>
     </main>
 
@@ -264,7 +272,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js" defer></script>
-    <script src="script.js?v=3.0" defer></script>
+    <script src="script.js?v=4.0" defer></script>
 </body>
 
 </html>
