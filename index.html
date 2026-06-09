@@ -14,7 +14,7 @@
         rel="stylesheet">
     <title>IITM-ESM Dashboard</title>
     <link rel="icon" type="image/x-icon" href="assets/favicon.png">
-    <link rel="stylesheet" href="style.css?v=1.9">
+    <link rel="stylesheet" href="style.css?v=2.0">
     <style>
         /* NUCLEAR FOCUS RESET (Bypasses CSS Cache) */
         *,
@@ -144,6 +144,13 @@
                         <span>SSP585</span></label>
                 </div>
             </div>
+
+            <!-- Mobile Menu Toggle Hamburger -->
+            <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle Menu">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </button>
         </div>
     </header>
 
@@ -155,6 +162,14 @@
             <div class="plasma-blob blob-3"></div>
             <div class="plasma-blob blob-4"></div>
         </div>
+
+        <!-- Mobile Term Switcher for Spatial View Carousel -->
+        <div class="mobile-term-switcher" id="term-switcher">
+            <button class="term-btn active" data-target="near-term">Near-term</button>
+            <button class="term-btn" data-target="mid-term">Mid-term</button>
+            <button class="term-btn" data-target="long-term">Long-term</button>
+        </div>
+
         <div class="maps-row">
             <div class="map-container" id="near-term">
                 <div class="map-header" id="near-term-header">Near-term (2025-2036)</div>
@@ -240,10 +255,22 @@
         </div>
     </footer>
 
+    <!-- Mobile Settings Drawer -->
+    <div class="mobile-drawer-overlay" id="mobile-drawer-overlay"></div>
+    <div class="mobile-drawer" id="mobile-drawer">
+        <div class="drawer-header">
+            <h2>Dashboard Controls</h2>
+            <button class="drawer-close" id="drawer-close" aria-label="Close Settings">✕</button>
+        </div>
+        <div class="drawer-body">
+            <!-- Controls will be moved here dynamically on mobile -->
+        </div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js" defer></script>
-    <script src="script.js?v=1.6" defer></script>
+    <script src="script.js?v=2.0" defer></script>
 </body>
 
 </html>

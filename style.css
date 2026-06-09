@@ -1776,3 +1776,517 @@ footer {
     pointer-events: none;
     text-align: center;
 }
+
+/* ==========================================
+   RESPONSIVE DESIGN (TABLETS & MOBILE VIEWPORT)
+   ========================================== */
+@media (max-width: 1024px) {
+    /* 1. Global Reset & Flow Layout */
+    body {
+        height: auto !important;
+        min-height: 100vh;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
+
+    main {
+        height: auto !important;
+        display: block !important;
+        overflow: visible !important;
+        padding: 0 0 2rem 0 !important;
+    }
+
+    /* 2. Header Layout */
+    header {
+        height: 76px !important;
+        padding: 0 1.2rem !important;
+        border-bottom: 1px solid #083344;
+    }
+
+    .header-inner {
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .header-brand {
+        gap: 0.5rem;
+    }
+
+    #main-logo {
+        height: 36px;
+    }
+
+    .header-brand h1 {
+        font-size: 1.15rem !important;
+        letter-spacing: 0;
+    }
+
+    .header-stats {
+        display: none !important; /* Hide viewer stats to save space on mobile */
+    }
+
+    /* View mode switcher stays in header */
+    .view-toggle-container {
+        margin: 0;
+    }
+
+    .desktop-only-toggle {
+        display: flex !important;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .view-label {
+        font-size: 0.72rem;
+        font-weight: 800;
+    }
+
+    /* 3. Hamburger Button */
+    .mobile-menu-toggle {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        width: 24px;
+        height: 16px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        z-index: 10020;
+    }
+
+    .mobile-menu-toggle .bar {
+        width: 100%;
+        height: 2.2px;
+        background-color: #ffffff;
+        border-radius: 1px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* X Animation for Hamburger when drawer is open */
+    body.mobile-menu-open .mobile-menu-toggle .bar:nth-child(1) {
+        transform: translateY(7px) rotate(45deg);
+    }
+
+    body.mobile-menu-open .mobile-menu-toggle .bar:nth-child(2) {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+
+    body.mobile-menu-open .mobile-menu-toggle .bar:nth-child(3) {
+        transform: translateY(-7px) rotate(-45deg);
+    }
+
+    /* Hide desktop-only layout pieces */
+    header #desktop-search-container,
+    header #controls-panel {
+        display: none !important;
+    }
+
+    /* 4. Sliding Glassmorphic Drawer */
+    .mobile-drawer-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10010;
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(4px);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.35s ease;
+    }
+
+    body.mobile-menu-open .mobile-drawer-overlay {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .mobile-drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: min(320px, 85vw);
+        z-index: 10015;
+        background: rgba(12, 74, 110, 0.88);
+        backdrop-filter: blur(24px) saturate(160%);
+        -webkit-backdrop-filter: blur(24px) saturate(160%);
+        border-left: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: -8px 0 32px rgba(0, 0, 0, 0.35);
+        display: flex;
+        flex-direction: column;
+        transform: translateX(100%);
+        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        padding: 0;
+    }
+
+    body.mobile-menu-open .mobile-drawer {
+        transform: translateX(0);
+    }
+
+    .drawer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.5rem 1.25rem 1rem;
+        border-bottom: 1.5px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .drawer-header h2 {
+        color: #ffffff;
+        font-size: 1.2rem;
+        font-weight: 850;
+        text-transform: uppercase;
+        margin: 0;
+        letter-spacing: 0.02em;
+    }
+
+    .drawer-close {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: #ffffff;
+        font-size: 0.9rem;
+        font-weight: 800;
+        cursor: pointer;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s ease;
+    }
+
+    .drawer-close:hover {
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+    }
+
+    .drawer-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.5rem 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.8rem;
+    }
+
+    /* Stacking controls inside mobile drawer */
+    .drawer-body .search-box {
+        width: 100% !important;
+        min-width: 0 !important;
+        margin-bottom: 0;
+        height: 40px;
+        background: #ffffff;
+        border: 1.5px solid #000000;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .drawer-body .search-box:focus-within {
+        width: 100% !important;
+        border-color: #38bdf8;
+    }
+
+    .drawer-body .header-controls {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 1.2rem !important;
+    }
+
+    .drawer-body .variable-selector {
+        width: 100%;
+    }
+
+    .drawer-body .custom-dropdown {
+        width: 100%;
+        display: block;
+    }
+
+    .drawer-body #metric-dropdown-btn {
+        width: 100%;
+        height: 40px;
+        border-color: #ffffff;
+        background: rgba(255, 255, 255, 0.15);
+        color: #ffffff;
+        box-shadow: none;
+        font-size: 0.8rem;
+        font-weight: 800;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23ffffff'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='4' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    }
+
+    /* Accordion override for Mobile custom-dropdown-menu */
+    .drawer-body .custom-dropdown-menu {
+        position: static !important;
+        width: 100% !important;
+        background: rgba(15, 23, 42, 0.45) !important;
+        border: 1.5px solid rgba(255, 255, 255, 0.2) !important;
+        margin-top: 8px !important;
+        box-shadow: none !important;
+        border-radius: 10px !important;
+        padding: 4px 0 !important;
+    }
+
+    .drawer-body .dropdown-item {
+        color: #ffffff !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .drawer-body .dropdown-item:last-child {
+        border-bottom: none;
+    }
+
+    .drawer-body .dropdown-item .chevron-right {
+        transform: rotate(90deg);
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .drawer-body .dropdown-item.open-submenu .chevron-right {
+        transform: rotate(270deg);
+    }
+
+    /* Accordion Submenu styling inside drawer */
+    .drawer-body .dropdown-submenu {
+        position: static !important;
+        width: 100% !important;
+        margin: 6px 0 0 0 !important;
+        background: rgba(15, 23, 42, 0.6) !important;
+        border: 1.5px dashed rgba(255, 255, 255, 0.15) !important;
+        box-shadow: none !important;
+        border-radius: 8px !important;
+        padding: 4px 0 !important;
+    }
+
+    .drawer-body .dropdown-submenu::before {
+        display: none !important; /* Remove desktop hover bridge */
+    }
+
+    .drawer-body .submenu-item {
+        color: rgba(255, 255, 255, 0.8) !important;
+        font-size: 0.78rem !important;
+        padding: 8px 16px !important;
+    }
+
+    .drawer-body .submenu-item.active {
+        background: rgba(34, 197, 94, 0.2) !important;
+        color: #22c55e !important;
+        font-weight: 800;
+    }
+
+    .drawer-body .dropdown-submenu.coming-soon {
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .drawer-body .submenu-info {
+        color: rgba(255, 255, 255, 0.4) !important;
+    }
+
+    /* Scenario radio button stack */
+    .drawer-body .scenario-radios {
+        width: 100% !important;
+        height: auto !important;
+        display: flex !important;
+        flex-direction: column !important;
+        background: rgba(15, 23, 42, 0.3) !important;
+        border-color: rgba(255, 255, 255, 0.2) !important;
+        padding: 6px !important;
+        gap: 4px !important;
+        border-radius: 12px !important;
+    }
+
+    .drawer-body .scenario-radios::before {
+        display: none !important; /* Remove sliding bar in mobile layout to stack clean */
+    }
+
+    .drawer-body .radio-label {
+        height: 38px !important;
+        font-size: 0.8rem !important;
+        font-weight: 700 !important;
+        color: rgba(255, 255, 255, 0.7) !important;
+        border-radius: 8px !important;
+        transition: all 0.2s ease !important;
+        border: 1.5px solid transparent !important;
+    }
+
+    .drawer-body .radio-label:has(input:checked) {
+        background: #ffffff !important;
+        color: #0c4a6e !important;
+        border-color: #000000 !important;
+    }
+
+    /* 5. Mobile Term Switcher (Spatial Carousel Control) */
+    .mobile-term-switcher {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+        margin: 12px auto 6px;
+        width: calc(100% - 2.4rem);
+        max-width: 440px;
+        padding: 4px;
+        background: rgba(15, 23, 42, 0.05);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 12px;
+        border: 1.5px solid #000000;
+        z-index: 5;
+    }
+
+    .term-btn {
+        flex: 1;
+        border: none;
+        background: transparent;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 0.78rem;
+        font-weight: 850;
+        text-transform: uppercase;
+        color: #475569;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .term-btn.active {
+        background: #ffffff;
+        color: #000000;
+        border: 1.5px solid #000000;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    }
+
+    /* 6. Spatial View Horizontal Swipe Carousel */
+    .maps-row {
+        flex: none !important;
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto !important;
+        scroll-snap-type: x mandatory !important;
+        -webkit-overflow-scrolling: touch;
+        gap: 16px;
+        padding: 10px 1.2rem 20px !important;
+        margin: 0 !important;
+        width: 100% !important;
+        scroll-behavior: smooth;
+        scrollbar-width: none; /* Firefox */
+    }
+
+    .maps-row::-webkit-scrollbar {
+        display: none; /* Chrome/Safari */
+    }
+
+    .map-container {
+        flex: 0 0 calc(100% - 16px) !important;
+        width: calc(100% - 16px) !important;
+        min-width: 0 !important;
+        scroll-snap-align: center;
+        margin: 0 auto !important;
+        aspect-ratio: 4/5 !important;
+        height: auto !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        border: 2px solid #000000 !important;
+        border-radius: 16px !important;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12) !important;
+    }
+
+    /* 7. Time Series View Override (Mobile) */
+    body.time-series-mode #near-term,
+    body.time-series-mode #long-term {
+        display: none !important; /* Hide maps on mobile in Time Series */
+    }
+
+    body.time-series-mode .maps-row {
+        display: block !important;
+        overflow-x: visible !important;
+        scroll-snap-type: none !important;
+        padding: 1rem 1.2rem !important;
+    }
+
+    body.time-series-mode #mid-term {
+        flex: none !important;
+        width: 100% !important;
+        aspect-ratio: auto !important;
+        min-height: auto !important;
+        border: none !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+    }
+
+    body.time-series-mode #mid-term .big-rect-placeholder {
+        position: relative !important;
+        inset: auto !important;
+        top: auto !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 20px !important;
+        background: transparent !important;
+        z-index: 1;
+        animation: none !important;
+    }
+
+    /* Stack Line & Bar charts vertically in Time Series mode */
+    .ts-window {
+        background: #ffffff;
+        border: 2.2px solid #000000;
+        border-radius: 16px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .ts-window-line {
+        height: 340px !important;
+        border-bottom: 2.2px solid #000000 !important;
+    }
+
+    .ts-window-bar {
+        height: 420px !important;
+    }
+
+    .ts-window canvas {
+        padding: 8px 1rem 1.2rem 1.4rem !important;
+    }
+
+    #bar-graph-header {
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .bar-controls-right {
+        top: 8px !important;
+        right: 12px !important;
+    }
+
+    /* Legends styling adjustments on mobile */
+    .legend {
+        width: calc(100% - 24px) !important;
+        bottom: 12px !important;
+        left: 12px !important;
+        padding: 8px !important;
+    }
+
+    /* 8. Footer Layout Stacking */
+    footer {
+        height: auto !important;
+        padding: 1.5rem 1rem !important;
+        border-top: 1.5px solid rgba(0, 0, 0, 0.1);
+        background: #f8fafc;
+    }
+
+    .footer-inner {
+        flex-direction: column !important;
+        text-align: center;
+        gap: 12px !important;
+    }
+
+    .footer-left,
+    .footer-mid,
+    .footer-right {
+        font-size: 0.74rem !important;
+        justify-content: center !important;
+        line-height: 1.4;
+    }
+}

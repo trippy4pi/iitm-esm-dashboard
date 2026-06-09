@@ -2086,3 +2086,157 @@ function enableCMIP7Menu() {
 
 // Trigger CMIP7 check on load
 checkCMIP7Availability();
+
+// Responsive & Mobile Layout Logic
+(() => {
+    const mobileToggle = document.getElementById('mobile-menu-toggle');
+    const mobileDrawer = document.getElementById('mobile-drawer');
+    const drawerOverlay = document.getElementById('mobile-drawer-overlay');
+    const drawerClose = document.getElementById('drawer-close');
+    const mapsRow = document.querySelector('.maps-row');
+    const termSwitcher = document.getElementById('term-switcher');
+
+    if (!mobileToggle || !mobileDrawer || !drawerOverlay || !drawerClose) return;
+
+    // Toggle Mobile Drawer
+    function openDrawer() {
+        document.body.classList.add('mobile-menu-open');
+    }
+    function closeDrawer() {
+        document.body.classList.remove('mobile-menu-open');
+    }
+
+    mobileToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (document.body.classList.contains('mobile-menu-open')) {
+            closeDrawer();
+        } else {
+            openDrawer();
+        }
+    });
+
+    drawerClose.addEventListener('click', closeDrawer);
+    drawerOverlay.addEventListener('click', closeDrawer);
+
+    // Dynamic Controls Reshuffle based on screen width
+    function handleResponsiveLayout() {
+        const isMobile = window.innerWidth <= 1024;
+        const searchContainer = document.getElementById('desktop-search-container');
+        const controlsPanel = document.getElementById('controls-panel');
+        const drawerBody = mobileDrawer.querySelector('.drawer-body');
+        const headerInner = document.querySelector('.header-inner');
+        const viewToggleArea = document.getElementById('view-toggle-area');
+
+        if (!searchContainer || !controlsPanel) return;
+
+        if (isMobile) {
+            if (drawerBody) {
+                if (!drawerBody.contains(searchContainer)) {
+                    drawerBody.appendChild(searchContainer);
+                }
+                if (!drawerBody.contains(controlsPanel)) {
+                    drawerBody.appendChild(controlsPanel);
+                }
+            }
+            // In Spatial View, show term switcher
+            const isTimeSeries = document.body.classList.contains('time-series-mode');
+            if (termSwitcher) {
+                termSwitcher.style.display = isTimeSeries ? 'none' : 'flex';
+            }
+        } else {
+            if (headerInner && viewToggleArea) {
+                // Return elements to header
+                headerInner.appendChild(searchContainer);
+                headerInner.appendChild(controlsPanel);
+            }
+            closeDrawer();
+            if (termSwitcher) {
+                termSwitcher.style.display = 'none';
+            }
+        }
+
+        // Trigger map invalidation to let Leaflet update its bounds
+        setTimeout(() => {
+            if (typeof mapViews !== 'undefined') {
+                Object.values(mapViews).forEach(m => {
+                    if (m) m.invalidateSize();
+                });
+            }
+        }, 300);
+    }
+
+    // Carousel Swipe / Term Switcher Syncing
+    if (termSwitcher && mapsRow) {
+        const termButtons = termSwitcher.querySelectorAll('.term-btn');
+        
+        termButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetId = btn.getAttribute('data-target');
+                const targetEl = document.getElementById(targetId);
+                if (targetEl) {
+                    termButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    // Scroll the container to target element
+                    mapsRow.scrollTo({
+                        left: targetEl.offsetLeft - mapsRow.offsetLeft - 12,
+                        behavior: 'smooth'
+                    });
+
+                    // Invalidate Leaflet map size after scroll finishes
+                    setTimeout(() => {
+                        const termKey = targetId.split('-')[0]; // 'near', 'mid', 'long'
+                        if (typeof mapViews !== 'undefined' && mapViews[termKey]) {
+                            mapViews[termKey].invalidateSize();
+                        }
+                    }, 400);
+                }
+            });
+        });
+
+        // Sync Carousel Swipe -> Switcher Button Active
+        let scrollTimeout;
+        mapsRow.addEventListener('scroll', () => {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                const isMobile = window.innerWidth <= 1024;
+                if (!isMobile) return;
+
+                const scrollLeft = mapsRow.scrollLeft;
+                const width = mapsRow.clientWidth || window.innerWidth;
+                const activeIndex = Math.round(scrollLeft / width);
+
+                const termsList = ['near-term', 'mid-term', 'long-term'];
+                const targetId = termsList[activeIndex];
+
+                if (targetId) {
+                    termButtons.forEach(btn => {
+                        const isMatch = btn.getAttribute('data-target') === targetId;
+                        btn.classList.toggle('active', isMatch);
+                    });
+
+                    // Invalidate active map
+                    const termKey = targetId.split('-')[0];
+                    if (typeof mapViews !== 'undefined' && mapViews[termKey]) {
+                        mapViews[termKey].invalidateSize();
+                    }
+                }
+            }, 100);
+        });
+    }
+
+    // Run layout adjustments on resize & load
+    window.addEventListener('resize', handleResponsiveLayout);
+    handleResponsiveLayout();
+
+    // Hook into View Mode Toggle logic to toggle switcher display
+    const viewToggle = document.getElementById('view-mode-toggle');
+    if (viewToggle) {
+        viewToggle.addEventListener('change', () => {
+            const isTimeSeries = viewToggle.checked;
+            if (window.innerWidth <= 1024 && termSwitcher) {
+                termSwitcher.style.display = isTimeSeries ? 'none' : 'flex';
+            }
+        });
+    }
+})();
