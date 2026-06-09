@@ -1005,24 +1005,6 @@ body:not(.time-series-mode) .big-rect-placeholder {
     margin: 6px 0;
 }
 
-.no-data-msg {
-    position: absolute;
-    display: none;
-    font-size: 1rem;
-    font-weight: 850;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: #94a3b8;
-    background: white;
-    padding: 1.5rem 3rem;
-    border: 2.5px dashed var(--border);
-    border-radius: 16px;
-    z-index: 100;
-}
-
-.no-data-msg.visible {
-    display: block;
-}
 
 /* Inline controls in Map Header - Instrument Style */
 .ts-control-group {

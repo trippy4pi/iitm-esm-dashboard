@@ -252,9 +252,6 @@ async function loadStateTimeSeriesData() {
 }
 
 function clearTimeSeriesChartsAndMaps() {
-    const noDataOverlay = document.getElementById('no-data-overlay');
-    if (noDataOverlay) noDataOverlay.classList.add('visible');
-    
     if (tsChart) { tsChart.destroy(); tsChart = null; }
     if (tsBarChart) { tsBarChart.destroy(); tsBarChart = null; }
     
@@ -939,7 +936,6 @@ async function updateTimeSeriesChart() {
     if (!varCfg) return;
 
     const canvas = document.getElementById('time-series-chart');
-    const noDataOverlay = document.getElementById('no-data-overlay');
     const header = document.getElementById('mid-term-header');
 
     if (!canvas || !header) return;
@@ -972,7 +968,6 @@ async function updateTimeSeriesChart() {
     if (!tsFullData) {
         try {
             tsFullData = await loadStateTimeSeriesData();
-            noDataOverlay.classList.remove('visible');
         } catch (e) {
             console.error('Time series fetch error:', e);
             clearTimeSeriesChartsAndMaps();
