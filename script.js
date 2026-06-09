@@ -23,7 +23,8 @@ let tsBarSort = 'az'; // Default Alphabetical A-Z
 let tsVisibleStates = new Set(); // For filtering bars
 
 // Data cache to avoid redundant fetches
-const _dataCache = { state: null, district: null };
+const _dataCache = {};
+let currentProjection = 'cmip6'; // 'cmip6' or 'cmip7'
 
 // Guard flag for populateSearch to prevent duplicate listeners
 let _searchInitialized = false;
@@ -74,7 +75,7 @@ function parseStateCSV(csvText) {
     metrics.forEach(m => {
         seasons.forEach(s => {
             scenarios.forEach(sc => {
-                const csvHeader = `cmip6_${m}_${sc}_${seasonSuffixMap[s]}`;
+                const csvHeader = `${currentProjection}_${m}_${sc}_${seasonSuffixMap[s]}`;
                 const hIdx = headers.indexOf(csvHeader);
                 if (hIdx !== -1) {
                     headerMapping.push({
@@ -137,11 +138,109 @@ function parseStateCSV(csvText) {
     return data;
 }
 
+function parseDistrictCSV(csvText, features) {
+    const lines = csvText.split('\n');
+    if (lines.length < 2) return [];
+
+    const headers = lines[0].split(',').map(h => h.trim());
+    
+    const metrics = ["tas", "tasmax", "tasmin", "pr"];
+    const scenarios = ["ssp126", "ssp245", "ssp370", "ssp585"];
+    
+    const colMapping = [];
+    metrics.forEach(m => {
+        scenarios.forEach(sc => {
+            const colName = `${currentProjection}_${m}_${sc}_Annual`;
+            const colIdx = headers.indexOf(colName);
+            if (colIdx !== -1) {
+                colMapping.push({
+                    metric: m,
+                    scenario: sc,
+                    colIdx: colIdx
+                });
+            }
+        });
+    });
+
+    const parsedDistricts = [];
+
+    for (let i = 0; i < features.length; i++) {
+        const feat = features[i];
+        const stateName = feat.properties.STATE_UT;
+        const districtName = feat.properties.DISTRICT;
+
+        const row = {
+            STATE_UT: stateName,
+            DISTRICT: districtName
+        };
+
+        const sums = new Array(48).fill(0);
+        const counts = new Array(48).fill(0);
+
+        const startLineIdx = (i + 1) * 85 + 1;
+
+        for (let yearIdx = 0; yearIdx < 85; yearIdx++) {
+            const lineIdx = startLineIdx + yearIdx;
+            if (lineIdx >= lines.length) break;
+
+            const line = lines[lineIdx];
+            if (!line) continue;
+
+            const columns = line.split(',');
+            if (columns.length < headers.length) continue;
+
+            const year = parseInt(columns[0]);
+            if (!year) continue;
+
+            let termIdx = -1;
+            if (year >= 2025 && year <= 2036) termIdx = 0;
+            else if (year >= 2050 && year <= 2070) termIdx = 1;
+            else if (year >= 2081 && year <= 2099) termIdx = 2;
+
+            if (termIdx !== -1) {
+                const termOffset = termIdx * 16;
+                for (let k = 0; k < colMapping.length; k++) {
+                    const map = colMapping[k];
+                    const valStr = columns[map.colIdx];
+                    if (valStr && valStr !== '\r') {
+                        const val = parseFloat(valStr);
+                        if (!isNaN(val)) {
+                            const idx = termOffset + k;
+                            sums[idx] += val;
+                            counts[idx] += 1;
+                        }
+                    }
+                }
+            }
+        }
+
+        const termNames = ['near', 'mid', 'long'];
+        for (let termIdx = 0; termIdx < 3; termIdx++) {
+            const termOffset = termIdx * 16;
+            const termName = termNames[termIdx];
+            for (let k = 0; k < colMapping.length; k++) {
+                const map = colMapping[k];
+                const idx = termOffset + k;
+                const key = `${map.metric}_${map.scenario}_${termName}`;
+                if (counts[idx] > 0) {
+                    row[key] = sums[idx] / counts[idx];
+                } else {
+                    row[key] = null;
+                }
+            }
+        }
+
+        parsedDistricts.push(row);
+    }
+
+    return parsedDistricts;
+}
+
 async function loadStateTimeSeriesData() {
     if (tsFullData) return tsFullData;
     
     try {
-        const resp = await fetch(`CSVs/cmip6_state_anomalies.csv?v=${Date.now()}`);
+        const resp = await fetch(`CSVs/${currentProjection}_state_anomalies.csv?v=${Date.now()}`);
         if (!resp.ok) throw new Error('CSV file not found');
         const csvText = await resp.text();
         tsFullData = parseStateCSV(csvText);
@@ -202,7 +301,7 @@ const terms = {
 const levelsCfg = {
     district: {
         variables: 'JSONs/District_VARIABLES.json',
-        data: 'JSONs/District_DATA.json',
+        data: 'CSVs/cmip6_district_anomalies.csv',
         geojson: 'JSONs/districts_ultra_optimized.geojson',
         keyGen: (props) => `${(props.STATE_UT || "").trim()}|${(props.DISTRICT || "").trim()}`.toLowerCase(),
         rowKeyGen: (row) => `${row.STATE_UT.trim()}|${row.DISTRICT.trim()}`.toLowerCase(),
@@ -433,10 +532,11 @@ async function load() {
         let rawData;
 
         // Use cache if available to avoid re-fetching large JSON files
-        if (_dataCache[currentLevel]) {
-            variablesConfig = _dataCache[currentLevel].variables;
-            rawData = _dataCache[currentLevel].data;
-            datasetGeoJSON = _dataCache[currentLevel].geojson;
+        const cacheKey = `${currentLevel}_${currentProjection}`;
+        if (_dataCache[cacheKey]) {
+            variablesConfig = _dataCache[cacheKey].variables;
+            rawData = _dataCache[cacheKey].data;
+            datasetGeoJSON = _dataCache[cacheKey].geojson;
         } else {
             if (currentLevel === 'state') {
                 const [vResp, gResp] = await Promise.all([
@@ -449,15 +549,16 @@ async function load() {
             } else {
                 const [vResp, dResp, gResp] = await Promise.all([
                     fetch(config.variables),
-                    fetch(config.data),
+                    fetch(config.data.replace('cmip6', currentProjection)),
                     fetch(config.geojson)
                 ]);
                 variablesConfig = await vResp.json();
-                rawData = await dResp.json();
+                const csvText = await dResp.text();
                 datasetGeoJSON = await gResp.json();
+                rawData = parseDistrictCSV(csvText, datasetGeoJSON.features);
             }
 
-            _dataCache[currentLevel] = {
+            _dataCache[cacheKey] = {
                 variables: variablesConfig,
                 data: rawData,
                 geojson: datasetGeoJSON
@@ -1804,3 +1905,143 @@ function downloadMapPNG(term) {
         });
     }
 })();
+
+// Custom Dropdown JS Logic
+(() => {
+    const dropdown = document.getElementById('metric-custom-dropdown');
+    const dropdownBtn = document.getElementById('metric-dropdown-btn');
+    const hiddenSelect = document.getElementById('metric-select');
+    if (!dropdown || !dropdownBtn || !hiddenSelect) return;
+
+    // Toggle dropdown on button click
+    dropdownBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!dropdown.contains(e.target)) {
+            dropdown.classList.remove('open');
+            dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+                item.classList.remove('open-submenu');
+            });
+        }
+    });
+
+    // Support mobile touch toggle for submenus
+    const hasSubmenus = dropdown.querySelectorAll('.dropdown-item.has-submenu');
+    hasSubmenus.forEach(item => {
+        item.addEventListener('click', (e) => {
+            if (e.target.closest('.dropdown-submenu')) return;
+            
+            const isOpen = item.classList.contains('open-submenu');
+            hasSubmenus.forEach(sib => sib.classList.remove('open-submenu'));
+            if (!isOpen) {
+                item.classList.add('open-submenu');
+            }
+            e.stopPropagation();
+        });
+    });
+
+    // Handle submenu item clicks (CMIP6 variables)
+    const submenuItems = dropdown.querySelectorAll('.submenu-item');
+    submenuItems.forEach(subItem => {
+        subItem.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const val = subItem.getAttribute('data-value');
+            const labelText = subItem.textContent;
+
+            // Update hidden select and trigger change event
+            hiddenSelect.value = val;
+            hiddenSelect.dispatchEvent(new Event('change'));
+
+            const newProj = subItem.closest('.dropdown-item').id === 'cmip7-item' ? 'cmip7' : 'cmip6';
+            if (currentProjection !== newProj) {
+                currentProjection = newProj;
+                tsFullData = null; // Clear cached state time series data so it reloads
+            }
+
+            // Update hidden select and trigger change event
+            hiddenSelect.value = val;
+            hiddenSelect.dispatchEvent(new Event('change'));
+
+            // Update dropdown button text
+            dropdownBtn.querySelector('span').innerText = `${currentProjection.toUpperCase()} - ${labelText}`;
+
+            // Highlight active item
+            dropdown.querySelectorAll('.submenu-item').forEach(sib => sib.classList.remove('active'));
+            subItem.classList.add('active');
+
+            // Close dropdown
+            dropdown.classList.remove('open');
+            hasSubmenus.forEach(sib => sib.classList.remove('open-submenu'));
+        });
+    });
+})();
+
+// CMIP7 Availability Checker
+async function checkCMIP7Availability() {
+    try {
+        const resp = await fetch('CSVs/cmip7_district_anomalies.csv');
+        if (resp.ok) {
+            enableCMIP7Menu();
+        }
+    } catch (e) {
+        console.log("CMIP7 file not available yet.");
+    }
+}
+
+function enableCMIP7Menu() {
+    const cmip7Item = document.getElementById('cmip7-item');
+    if (!cmip7Item) return;
+
+    const submenu = cmip7Item.querySelector('.dropdown-submenu');
+    if (submenu) {
+        submenu.classList.remove('coming-soon');
+        submenu.innerHTML = `
+            <div class="submenu-item" data-value="mean_temp">Mean Temperature</div>
+            <div class="submenu-item" data-value="max_temp">Max Temperature</div>
+            <div class="submenu-item" data-value="min_temp">Min Temperature</div>
+            <div class="submenu-item" data-value="precipitation">Precipitation</div>
+        `;
+
+        // Attach click listeners to the dynamically added CMIP7 submenu items
+        const newItems = submenu.querySelectorAll('.submenu-item');
+        newItems.forEach(subItem => {
+            subItem.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const val = subItem.getAttribute('data-value');
+                const labelText = subItem.textContent;
+
+                const dropdown = document.getElementById('metric-custom-dropdown');
+                const dropdownBtn = document.getElementById('metric-dropdown-btn');
+                const hiddenSelect = document.getElementById('metric-select');
+
+                const newProj = 'cmip7';
+                if (currentProjection !== newProj) {
+                    currentProjection = newProj;
+                    tsFullData = null; // Clear cached state time series data so it reloads
+                }
+
+                // Update hidden select and trigger change event
+                hiddenSelect.value = val;
+                hiddenSelect.dispatchEvent(new Event('change'));
+
+                // Update dropdown button text
+                dropdownBtn.querySelector('span').innerText = `CMIP7 - ${labelText}`;
+
+                // Highlight active item
+                dropdown.querySelectorAll('.submenu-item').forEach(sib => sib.classList.remove('active'));
+                subItem.classList.add('active');
+
+                // Close dropdown
+                dropdown.classList.remove('open');
+                dropdown.querySelectorAll('.dropdown-item').forEach(sib => sib.classList.remove('open-submenu'));
+            });
+        });
+    }
+}
+
+// Trigger CMIP7 check on load
+checkCMIP7Availability();

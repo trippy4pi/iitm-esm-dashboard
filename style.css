@@ -1667,3 +1667,130 @@ footer {
     transform: scale(1.12);
     filter: brightness(0);
 }
+
+/* Custom Dropdown Styles */
+.custom-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.custom-dropdown-btn.premium-select {
+    text-align: left;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.custom-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1100;
+    background: #ffffff;
+    border: 1.5px solid #000000;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: none;
+    flex-direction: column;
+    min-width: 180px;
+    padding: 4px 0;
+    margin-top: 6px;
+    transition: all 0.2s ease;
+}
+
+.custom-dropdown.open .custom-dropdown-menu {
+    display: flex;
+}
+
+.dropdown-item {
+    padding: 8px 14px;
+    font-weight: 750;
+    color: #0f172a;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    font-size: clamp(0.75rem, 0.8vw, 0.85rem);
+    transition: background 0.15s ease;
+}
+
+.dropdown-item:hover {
+    background: #f1f5f9;
+}
+
+.dropdown-item .chevron-right {
+    margin-left: 8px;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.dropdown-submenu {
+    position: absolute;
+    top: -5px;
+    left: 100%;
+    margin-left: 6px;
+    background: #ffffff;
+    border: 1.5px solid #000000;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: none;
+    flex-direction: column;
+    min-width: 200px;
+    padding: 4px 0;
+    z-index: 1200;
+}
+
+.dropdown-submenu::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -10px;
+    width: 10px;
+    height: 100%;
+    background: transparent;
+}
+
+.dropdown-item:hover .dropdown-submenu {
+    display: flex;
+}
+
+.dropdown-item.open-submenu .dropdown-submenu {
+    display: flex;
+}
+
+.submenu-item {
+    padding: 8px 14px;
+    font-weight: 750;
+    color: #0f172a;
+    cursor: pointer;
+    text-align: left;
+    font-size: clamp(0.75rem, 0.8vw, 0.85rem);
+    transition: all 0.15s ease;
+}
+
+.submenu-item:hover {
+    background: #f8fafc;
+    color: #38bdf8;
+}
+
+.submenu-item.active {
+    background: rgba(34, 197, 94, 0.1);
+    color: #16a34a;
+}
+
+.dropdown-submenu.coming-soon {
+    min-width: 140px;
+    padding: 10px 14px;
+    background: #fafaf9;
+    border: 1.5px dashed #cbd5e1;
+}
+
+.submenu-info {
+    font-style: italic;
+    color: #64748b;
+    font-weight: 600;
+    font-size: clamp(0.75rem, 0.8vw, 0.85rem);
+    pointer-events: none;
+    text-align: center;
+}

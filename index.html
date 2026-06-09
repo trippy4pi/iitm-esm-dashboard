@@ -101,12 +101,39 @@
 
             <div class="header-controls" id="controls-panel">
                 <div class="variable-selector">
-                    <select id="metric-select" class="premium-select">
+                    <!-- Hidden native select for JS compatibility -->
+                    <select id="metric-select" class="premium-select" style="display: none;">
                         <option value="mean_temp" selected>Mean Temperature</option>
                         <option value="max_temp">Max Temperature</option>
                         <option value="min_temp">Min Temperature</option>
                         <option value="precipitation">Precipitation</option>
                     </select>
+
+                    <!-- Custom Two-Level nested dropdown for CMIP6/CMIP7 -->
+                    <div class="custom-dropdown" id="metric-custom-dropdown">
+                        <button class="custom-dropdown-btn premium-select" id="metric-dropdown-btn" type="button">
+                            <span>CMIP6 - Mean Temperature</span>
+                        </button>
+                        <div class="custom-dropdown-menu" id="metric-dropdown-menu">
+                            <div class="dropdown-item has-submenu" id="cmip6-item">
+                                <span>CMIP6 Projections</span>
+                                <svg class="chevron-right" viewBox="0 0 24 24" width="12" height="12"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <div class="dropdown-submenu">
+                                    <div class="submenu-item active" data-value="mean_temp">Mean Temperature</div>
+                                    <div class="submenu-item" data-value="max_temp">Max Temperature</div>
+                                    <div class="submenu-item" data-value="min_temp">Min Temperature</div>
+                                    <div class="submenu-item" data-value="precipitation">Precipitation</div>
+                                </div>
+                            </div>
+                            <div class="dropdown-item has-submenu" id="cmip7-item">
+                                <span>CMIP7 Projections</span>
+                                <svg class="chevron-right" viewBox="0 0 24 24" width="12" height="12"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <div class="dropdown-submenu coming-soon">
+                                    <div class="submenu-info">Coming Soon...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="scenario-radios" role="radiogroup" aria-label="SSP scenario selection">
@@ -197,7 +224,7 @@
     <footer>
         <div class="footer-inner">
             <div class="footer-left">
-                Data source: IITM-ESM outputs for Indian Region • 0.25° x 0.25°
+                Data Source: Bias Corrected 0.25°×0.25° product developed at CCCR, IITM Pune
             </div>
             <div class="footer-mid">
                 &copy; 2026 ESM Group All Rights Reserved
