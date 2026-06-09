@@ -1849,7 +1849,8 @@ footer {
 
     /* Hide desktop-only layout pieces */
     header #desktop-search-container,
-    header #controls-panel {
+    header #controls-panel,
+    header #view-toggle-area {
         display: none !important;
     }
 
@@ -1914,9 +1915,21 @@ footer {
     }
 
     .mobile-filter-accordion.open .filter-accordion-content {
-        max-height: 320px;
+        max-height: 380px;
         padding: 20px 16px;
         overflow: visible;
+    }
+
+    /* Accordion view toggle alignment & labels coloring */
+    .filter-accordion-content .view-toggle-container {
+        display: flex !important;
+        justify-content: center;
+        width: 100%;
+        margin-bottom: 4px;
+    }
+
+    .filter-accordion-content .view-label {
+        color: #0f172a !important;
     }
 
     /* Accordion Controls Alignment & Desktop Looks Match */

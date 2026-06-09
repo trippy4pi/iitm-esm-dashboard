@@ -2120,16 +2120,13 @@ checkCMIP7Availability();
         const headerInner = document.querySelector('.header-inner');
         const viewToggleArea = document.getElementById('view-toggle-area');
 
-        if (!searchContainer || !controlsPanel) return;
+        if (!searchContainer || !controlsPanel || !viewToggleArea) return;
 
         if (isMobile) {
             if (accordionContent) {
-                if (!accordionContent.contains(searchContainer)) {
-                    accordionContent.appendChild(searchContainer);
-                }
-                if (!accordionContent.contains(controlsPanel)) {
-                    accordionContent.appendChild(controlsPanel);
-                }
+                accordionContent.appendChild(viewToggleArea);
+                accordionContent.appendChild(searchContainer);
+                accordionContent.appendChild(controlsPanel);
             }
             // In Spatial View, show term switcher
             const isTimeSeries = document.body.classList.contains('time-series-mode');
@@ -2137,8 +2134,9 @@ checkCMIP7Availability();
                 termSwitcher.style.display = isTimeSeries ? 'none' : 'flex';
             }
         } else {
-            if (headerInner && viewToggleArea) {
-                // Return elements to header
+            if (headerInner) {
+                // Return elements to header in brand -> toggle -> search -> controls sequence
+                headerInner.appendChild(viewToggleArea);
                 headerInner.appendChild(searchContainer);
                 headerInner.appendChild(controlsPanel);
             }
