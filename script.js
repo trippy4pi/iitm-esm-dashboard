@@ -987,6 +987,23 @@ async function updateTimeSeriesChart() {
 
     const rawArray = tsFullData[jsKey]?.[seasonKey]?.[scenKey];
     if (!rawArray || !rawArray.length) {
+        tsPeriodMeans = {}; // Clear map data
+        clearTimeSeriesChartsAndMaps();
+        return;
+    }
+
+    const hasStateSelection = (stateKey && tsTriggeredByMap);
+
+    // Process India Points (Always Green)
+    const indiaPoints = rawArray
+        .filter(d => d.year >= tsStartYear && d.year <= tsEndYear)
+        .map(d => ({ x: d.year, y: d["INDIA"] }))
+        .filter(p => p.y !== null && !isNaN(p.y));
+
+    // Check if we have any valid data points
+    const hasData = indiaPoints.length > 0 || (hasStateSelection && rawArray.some(d => d[stateKey] !== null && !isNaN(d[stateKey])));
+    if (!hasData) {
+        tsPeriodMeans = {}; // Clear map data
         clearTimeSeriesChartsAndMaps();
         return;
     }
@@ -998,16 +1015,14 @@ async function updateTimeSeriesChart() {
         // Assume first row has all keys (States)
         const keys = Object.keys(filteredRows[0]).filter(k => k !== 'year' && k !== 'year_id');
         keys.forEach(k => {
-            const sum = filteredRows.reduce((acc, row) => acc + (row[k] || 0), 0);
-            tsPeriodMeans[k] = sum / filteredRows.length;
+            const vals = filteredRows.map(row => row[k]).filter(v => v !== null && !isNaN(v));
+            if (vals.length > 0) {
+                tsPeriodMeans[k] = vals.reduce((acc, v) => acc + v, 0) / vals.length;
+            } else {
+                tsPeriodMeans[k] = null;
+            }
         });
     }
-
-    // Process India Points (Always Green)
-    const indiaPoints = rawArray
-        .filter(d => d.year >= tsStartYear && d.year <= tsEndYear)
-        .map(d => ({ x: d.year, y: d["INDIA"] }))
-        .filter(p => p.y !== null && !isNaN(p.y));
 
     const hasStateSelection = (stateKey && tsTriggeredByMap);
     const datasets = [];
@@ -1078,6 +1093,9 @@ async function updateTimeSeriesChart() {
         const pad = (max - min) * 0.12 || 0.1;
         yMin = min - pad;
         yMax = max + pad;
+    } else {
+        yMin = 0;
+        yMax = 1;
     }
 
     // 5. Render Chart
@@ -1368,6 +1386,9 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
         const pad = (max - min) * 0.08 || 0.1;
         barYMin = min - pad;
         barYMax = max + pad;
+    } else {
+        barYMin = 0;
+        barYMax = 1;
     }
 
     const ctx = canvas.getContext('2d');
