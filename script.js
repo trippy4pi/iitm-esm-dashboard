@@ -1003,13 +1003,6 @@ async function updateTimeSeriesChart() {
         });
     }
 
-    // 4.6 Sync map header title
-    const nearHdr = document.getElementById('near-term-header');
-    if (nearHdr) {
-        const seasonLabel = tsSeasonLabels[tsSeason] || tsSeason.toUpperCase();
-        nearHdr.innerText = `${seasonLabel} ${varCfg.label} (${scenario}) Averaged Between ${tsStartYear} and ${tsEndYear}`;
-    }
-
     // Process India Points (Always Green)
     const indiaPoints = rawArray
         .filter(d => d.year >= tsStartYear && d.year <= tsEndYear)
