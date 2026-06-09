@@ -650,9 +650,9 @@ function initGeoLayers() {
                 const featureKey = config.keyGen(feature.properties);
                 layersMap[term][featureKey] = layer;
 
-                layer.on('mouseover', (e) => { if (!lockedFeatureKey) syncHover(featureKey, term, true, e.latlng); });
-                layer.on('mousemove', (e) => { if (!lockedFeatureKey) syncHover(featureKey, term, true, e.latlng); });
-                layer.on('mouseout', () => { if (!lockedFeatureKey) syncHover(null, term, false); });
+                layer.on('mouseover', (e) => { syncHover(featureKey, term, true, e.latlng); });
+                layer.on('mousemove', (e) => { syncHover(featureKey, term, true, e.latlng); });
+                layer.on('mouseout', () => { syncHover(featureKey, term, false); });
                 layer.on('click', (e) => {
                     if (lockedFeatureKey === featureKey) clearSelection();
                     else selectFeature(featureKey, false, true); // true = trigger mode switch
@@ -735,10 +735,16 @@ function syncHover(featureKey, sourceTerm, isOver, latlng, source = 'map') {
                     weight: isLocked ? 2.2 : 0.5, 
                     color: '#000000' 
                 });
-                if (!isLocked) l.closeTooltip();
+                l.closeTooltip();
             });
         } else if (layer) {
-            layer.setStyle({ weight: 2.2, color: '#000000' });
+            // Close other tooltips to prevent duplicates/stuck tooltips
+            Object.keys(layers).forEach(k => {
+                if (k !== featureKey) layers[k].closeTooltip();
+            });
+
+            const isLocked = (lockedFeatureKey === featureKey);
+            layer.setStyle({ weight: isLocked ? 2.2 : 1.8, color: '#000000' });
             if (layer.bringToFront) layer.bringToFront();
             if (latlng) layer.openTooltip(latlng);
             else layer.openTooltip();
@@ -1000,7 +1006,8 @@ async function updateTimeSeriesChart() {
     // 4.6 Sync map header title
     const nearHdr = document.getElementById('near-term-header');
     if (nearHdr) {
-        nearHdr.innerText = `${varCfg.label} (${scenario}) Averaged Between ${tsStartYear} and ${tsEndYear}`;
+        const seasonLabel = tsSeasonLabels[tsSeason] || tsSeason.toUpperCase();
+        nearHdr.innerText = `${seasonLabel} ${varCfg.label} (${scenario}) Averaged Between ${tsStartYear} and ${tsEndYear}`;
     }
 
     // Process India Points (Always Green)
@@ -1725,9 +1732,22 @@ function populateSearch() {
                 setTimeout(() => {
                     Object.values(mapViews).forEach(m => {
                         m.invalidateSize();
+                        if (lockedFeatureKey) {
+                            const layer = layersMap['near'][lockedFeatureKey];
+                            if (layer) {
+                                m.setView(layer.getBounds().getCenter(), 5.5, { animate: false });
+                                return;
+                            }
+                        }
                         m.setView([22.9734, 82.5], 4.5, { animate: false });
                     });
                     containers.forEach(c => c.classList.remove('is-loading'));
+                    if (lockedFeatureKey) {
+                        const layer = layersMap['near'][lockedFeatureKey];
+                        if (layer) {
+                            syncHover(lockedFeatureKey, null, true, layer.getBounds().getCenter());
+                        }
+                    }
                 }, 800);
             } else {
                 // Exiting Time Series: Sequence the layout first
@@ -1745,10 +1765,23 @@ function populateSearch() {
                     updateDashboard();
                     Object.values(mapViews).forEach(m => {
                         m.invalidateSize();
+                        if (lockedFeatureKey) {
+                            const layer = layersMap['near'][lockedFeatureKey];
+                            if (layer) {
+                                m.setView(layer.getBounds().getCenter(), 5, { animate: false });
+                                return;
+                            }
+                        }
                         m.setView([22.9734, 82.5], 4.5, { animate: false });
                     });
                     containers.forEach(c => c.classList.remove('is-loading'));
-                }, 750);
+                    if (lockedFeatureKey) {
+                        const layer = layersMap['near'][lockedFeatureKey];
+                        if (layer) {
+                            syncHover(lockedFeatureKey, null, true, layer.getBounds().getCenter());
+                        }
+                    }
+                }, 800);
             }
         });
     }
