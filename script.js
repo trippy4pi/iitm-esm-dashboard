@@ -1024,7 +1024,6 @@ async function updateTimeSeriesChart() {
         });
     }
 
-    const hasStateSelection = (stateKey && tsTriggeredByMap);
     const datasets = [];
 
     if (hasStateSelection) {
