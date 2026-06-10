@@ -2223,7 +2223,7 @@ footer {
 
     .carousel-nav-btn {
         position: absolute;
-        top: 34px;
+        top: 50%;
         transform: translateY(-50%);
         width: 38px;
         height: 38px;
