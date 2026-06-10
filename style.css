@@ -2266,8 +2266,8 @@ footer {
         overflow-y: hidden !important;
         scroll-snap-type: x mandatory !important;
         -webkit-overflow-scrolling: touch;
-        gap: 16px;
-        padding: 10px 1.2rem 20px !important;
+        gap: 16px !important;
+        padding: 10px 12px 20px !important;
         margin: 0 !important;
         width: 100% !important;
         scroll-behavior: smooth;
@@ -2280,8 +2280,8 @@ footer {
     }
 
     .map-container {
-        flex: 0 0 calc(100% - 16px) !important;
-        width: calc(100% - 16px) !important;
+        flex: 0 0 calc(100vw - 24px) !important;
+        width: calc(100vw - 24px) !important;
         min-width: 0 !important;
         scroll-snap-align: center;
         margin: 0 auto !important;
