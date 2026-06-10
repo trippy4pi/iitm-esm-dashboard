@@ -2131,6 +2131,8 @@ checkCMIP7Availability();
         }, 350);
     });
 
+    let wasMobile = null;
+
     // Dynamic Controls Reshuffle based on screen width
     function handleResponsiveLayout() {
         const isMobile = window.innerWidth <= 1024;
@@ -2141,20 +2143,23 @@ checkCMIP7Availability();
 
         if (!searchContainer || !controlsPanel || !viewToggleArea) return;
 
-        if (isMobile) {
-            if (accordionContent) {
-                accordionContent.appendChild(viewToggleArea);
-                accordionContent.appendChild(searchContainer);
-                accordionContent.appendChild(controlsPanel);
+        if (isMobile !== wasMobile) {
+            wasMobile = isMobile;
+            if (isMobile) {
+                if (accordionContent) {
+                    accordionContent.appendChild(viewToggleArea);
+                    accordionContent.appendChild(searchContainer);
+                    accordionContent.appendChild(controlsPanel);
+                }
+            } else {
+                if (headerInner) {
+                    // Return elements to header in brand -> toggle -> search -> controls sequence
+                    headerInner.appendChild(viewToggleArea);
+                    headerInner.appendChild(searchContainer);
+                    headerInner.appendChild(controlsPanel);
+                }
+                accordion.classList.remove('open');
             }
-        } else {
-            if (headerInner) {
-                // Return elements to header in brand -> toggle -> search -> controls sequence
-                headerInner.appendChild(viewToggleArea);
-                headerInner.appendChild(searchContainer);
-                headerInner.appendChild(controlsPanel);
-            }
-            accordion.classList.remove('open');
         }
 
         // Trigger map invalidation to let Leaflet update its bounds
