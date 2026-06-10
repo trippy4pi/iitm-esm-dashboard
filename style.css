@@ -2158,16 +2158,58 @@ footer {
         height: 100% !important;
         font-size: 0.72rem !important;
         font-weight: 500 !important;
-        color: #0f172a !important;
         border: none !important;
         border-radius: 0 !important;
         background: transparent !important;
     }
 
+    .filter-accordion-content .radio-label:nth-child(1) {
+        color: rgba(22, 163, 74, 0.65) !important;
+    }
+    .filter-accordion-content .radio-label:nth-child(2) {
+        color: rgba(202, 138, 4, 0.65) !important;
+    }
+    .filter-accordion-content .radio-label:nth-child(3) {
+        color: rgba(234, 88, 12, 0.65) !important;
+    }
+    .filter-accordion-content .radio-label:nth-child(4) {
+        color: rgba(220, 38, 38, 0.65) !important;
+    }
+
     .filter-accordion-content .radio-label:has(input:checked) {
         background: transparent !important;
-        color: #000000 !important;
-        font-weight: 800 !important;
+        font-weight: 900 !important;
+    }
+
+    .filter-accordion-content .radio-label:has(input:checked):nth-child(1) {
+        color: #16a34a !important;
+    }
+    .filter-accordion-content .radio-label:has(input:checked):nth-child(2) {
+        color: #ca8a04 !important;
+    }
+    .filter-accordion-content .radio-label:has(input:checked):nth-child(3) {
+        color: #ea580c !important;
+    }
+    .filter-accordion-content .radio-label:has(input:checked):nth-child(4) {
+        color: #dc2626 !important;
+    }
+
+    /* Dynamically color the mobile sliding bar based on selection */
+    .filter-accordion-content .scenario-radios:has(input[value="0"]:checked)::before {
+        background: rgba(34, 197, 94, 0.12) !important;
+        border-color: #16a34a !important;
+    }
+    .filter-accordion-content .scenario-radios:has(input[value="1"]:checked)::before {
+        background: rgba(234, 179, 8, 0.12) !important;
+        border-color: #ca8a04 !important;
+    }
+    .filter-accordion-content .scenario-radios:has(input[value="2"]:checked)::before {
+        background: rgba(249, 115, 22, 0.12) !important;
+        border-color: #ea580c !important;
+    }
+    .filter-accordion-content .scenario-radios:has(input[value="3"]:checked)::before {
+        background: rgba(239, 68, 68, 0.12) !important;
+        border-color: #dc2626 !important;
     }
 
     .carousel-wrapper {
