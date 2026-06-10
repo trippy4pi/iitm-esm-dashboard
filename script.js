@@ -366,9 +366,23 @@ function buildLegendBar(cfg) {
 
 // Map Initialization
 (() => {
-    const isMobile = window.innerWidth <= 767;
-    const startZoom = isMobile ? 3.5 : 4.5;
-    const minZoomVal = isMobile ? 3 : 4;
+    const width = window.innerWidth;
+    let startZoom = 4.5;
+    let minZoomVal = 4;
+
+    if (width <= 767) {
+        startZoom = 4.0;
+        minZoomVal = 3.5;
+    } else if (width >= 2200) {
+        // Large monitors (2K/4K)
+        startZoom = 5.0;
+        minZoomVal = 4;
+    } else {
+        // Standard desktops / laptops (like user's laptop)
+        startZoom = 4.5;
+        minZoomVal = 4;
+    }
+
     const center = [22.9734, 82.5];
     const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
