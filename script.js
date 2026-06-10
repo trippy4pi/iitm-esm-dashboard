@@ -366,7 +366,9 @@ function buildLegendBar(cfg) {
 
 // Map Initialization
 (() => {
-    const startZoom = 4.5;
+    const isMobile = window.innerWidth <= 767;
+    const startZoom = isMobile ? 3.5 : 4.5;
+    const minZoomVal = isMobile ? 3 : 4;
     const center = [22.9734, 82.5];
     const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
@@ -437,7 +439,7 @@ function buildLegendBar(cfg) {
         const m = L.map(id, {
             zoomControl: false,
             attributionControl: true,
-            minZoom: 4,
+            minZoom: minZoomVal,
             maxZoom: 8,
             zoomSnap: 0.1
         }).setView(center, startZoom);
