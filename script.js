@@ -1965,6 +1965,26 @@ function downloadMapPNG(term) {
     }
 })();
 
+// Helper to update dropdown button text dynamically based on screen width
+function updateMetricDropdownButtonText(proj, val, fullLabelText) {
+    const dropdownBtn = document.getElementById('metric-dropdown-btn');
+    if (!dropdownBtn) return;
+    
+    const isMobile = window.innerWidth <= 767;
+    if (isMobile) {
+        const shortNames = {
+            'mean_temp': 'tas',
+            'max_temp': 'tasmax',
+            'min_temp': 'tasmin',
+            'precipitation': 'pr'
+        };
+        const shortName = shortNames[val] || val;
+        dropdownBtn.querySelector('span').innerText = `${proj.toUpperCase()}-${shortName}`;
+    } else {
+        dropdownBtn.querySelector('span').innerText = `${proj.toUpperCase()} - ${fullLabelText}`;
+    }
+}
+
 // Custom Dropdown JS Logic
 (() => {
     const dropdown = document.getElementById('metric-custom-dropdown');
@@ -2026,7 +2046,7 @@ function downloadMapPNG(term) {
             hiddenSelect.dispatchEvent(new Event('change'));
 
             // Update dropdown button text
-            dropdownBtn.querySelector('span').innerText = `${currentProjection.toUpperCase()} - ${labelText}`;
+            updateMetricDropdownButtonText(currentProjection, val, labelText);
 
             // Highlight active item
             dropdown.querySelectorAll('.submenu-item').forEach(sib => sib.classList.remove('active'));
@@ -2088,7 +2108,7 @@ function enableCMIP7Menu() {
                 hiddenSelect.dispatchEvent(new Event('change'));
 
                 // Update dropdown button text
-                dropdownBtn.querySelector('span').innerText = `CMIP7 - ${labelText}`;
+                updateMetricDropdownButtonText('cmip7', val, labelText);
 
                 // Highlight active item
                 dropdown.querySelectorAll('.submenu-item').forEach(sib => sib.classList.remove('active'));
@@ -2160,6 +2180,14 @@ checkCMIP7Availability();
                 }
                 accordion.classList.remove('open');
             }
+        }
+
+        // Update metric dropdown button text dynamically for mobile/desktop layout
+        const activeSubmenuItem = document.querySelector('.submenu-item.active');
+        if (activeSubmenuItem) {
+            const val = activeSubmenuItem.getAttribute('data-value');
+            const labelText = activeSubmenuItem.textContent;
+            updateMetricDropdownButtonText(currentProjection, val, labelText);
         }
 
         // Trigger map invalidation to let Leaflet update its bounds

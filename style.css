@@ -1957,10 +1957,10 @@ footer {
         max-height: 0;
         overflow: hidden;
         transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease, opacity 0.3s ease;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 16px;
+        display: grid !important; /* grid layout */
+        grid-template-columns: 1fr 1fr !important;
+        gap: 12px 16px !important;
+        align-items: center !important;
         opacity: 0;
         pointer-events: none;
         z-index: 2000;
@@ -1980,6 +1980,8 @@ footer {
         justify-content: center;
         width: 100%;
         margin-bottom: 4px;
+        grid-column: span 2 !important;
+        grid-row: 1 !important;
     }
 
     .filter-accordion-content .view-label {
@@ -1988,6 +1990,8 @@ footer {
 
     /* Accordion Controls Alignment & Desktop Looks Match */
     .filter-accordion-content .search-box {
+        grid-column: 2 !important;
+        grid-row: 2 !important;
         width: 100% !important;
         max-width: none !important;
         min-width: 0 !important;
@@ -2007,14 +2011,12 @@ footer {
     }
 
     .filter-accordion-content .header-controls {
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        gap: 16px !important;
-        width: 100%;
+        display: contents !important; /* dissolve wrapper so children participate in grid */
     }
 
     .filter-accordion-content .variable-selector {
+        grid-column: 1 !important;
+        grid-row: 2 !important;
         width: 100%;
         display: flex;
         justify-content: center;
@@ -2116,6 +2118,8 @@ footer {
 
     /* Keep the horizontal sliding radios look exactly as desktop */
     .filter-accordion-content .scenario-radios {
+        grid-column: span 2 !important;
+        grid-row: 3 !important;
         width: 100% !important;
         max-width: none !important;
         height: 36px !important;
