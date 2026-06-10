@@ -2049,6 +2049,7 @@ footer {
         left: 0 !important;
         width: 100% !important;
         max-width: none !important;
+        min-width: 0 !important;
         background: #ffffff !important;
         border: 1.5px solid #000000 !important;
         border-radius: 10px !important;
@@ -2092,6 +2093,7 @@ footer {
         display: none !important;
         width: calc(100% + 28px) !important;
         max-width: none !important;
+        min-width: 0 !important;
         background: #f8fafc !important;
         border: none !important;
         border-radius: 0 !important;
