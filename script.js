@@ -201,8 +201,8 @@ function parseDistrictCSV(csvText, features) {
                 const termOffset = termIdx * 16;
                 for (let k = 0; k < colMapping.length; k++) {
                     const map = colMapping[k];
-                    const valStr = columns[map.colIdx];
-                    if (valStr && valStr !== '\r') {
+                    const valStr = columns[map.colIdx] ? columns[map.colIdx].trim() : '';
+                    if (valStr && valStr !== 'NaN') {
                         const val = parseFloat(valStr);
                         if (!isNaN(val)) {
                             const idx = termOffset + k;
@@ -1321,11 +1321,6 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
         barTitleEl.style.color = '#000000';
     }
 
-    if (tsBarChart) tsBarChart.destroy();
-    // Clean up orphaned tooltip element from bar chart
-    const oldBarTooltip = document.getElementById('chartjs-tooltip');
-    if (oldBarTooltip) oldBarTooltip.remove();
-
     // Prepare data
     let items = Object.keys(stateAcronyms)
         .map(stateName => {
@@ -1405,131 +1400,154 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
         canvas._mouseMoveAttached = true;
     }
 
-    tsBarChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: varCfg.label,
-                data: data,
-                backgroundColor: barGrad,
-                hoverBackgroundColor: '#60a5fa',
-                borderRadius: 6,
-                borderSkipped: false,
-                categoryPercentage: 0.9,
-                barPercentage: 0.9
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: {
-                duration: 1000,
-                easing: 'easeOutQuart'
-            },
-            layout: {
-                padding: {
-                    bottom: 15
-                }
-            },
-            onHover: (evt, elements) => {
-                if (elements.length > 0) {
-                    const idx = elements[0].index;
-                    const stateName = tsBarDataItems[idx].stateName;
-                    const featureKey = Object.keys(window.dataLookup).find(k => k.toUpperCase() === stateName.toUpperCase());
-                    if (featureKey) syncHover(featureKey, null, true, null, 'bar');
-                } else {
-                    syncHover(null, null, false, null, 'bar');
-                }
-            },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    enabled: false,
-                    position: 'nearest',
-                    external: function (context) {
-                        let tooltipEl = document.getElementById('chartjs-tooltip');
-                        if (!tooltipEl) {
-                            tooltipEl = document.createElement('div');
-                            tooltipEl.id = 'chartjs-tooltip';
-                            tooltipEl.className = 'district-tooltip ts-custom-tooltip';
-                            document.body.appendChild(tooltipEl);
-                        }
+    if (tsBarChart) {
+        // Update existing chart instance dynamically to avoid canvas collapse and layout jerk
+        tsBarChart.data.labels = labels;
+        tsBarChart.data.datasets[0].label = varCfg.label;
+        tsBarChart.data.datasets[0].data = data;
+        tsBarChart.data.datasets[0].backgroundColor = barGrad;
 
-                        const tooltipModel = context.tooltip;
-                        if (tooltipModel.opacity === 0) {
-                            tooltipEl.style.opacity = 0;
-                            return;
-                        }
+        tsBarChart.options.scales.x.ticks.font.size = useFullNames ? 14 : 12;
+        tsBarChart.options.scales.y.suggestedMin = barYMin !== null ? Math.min(0, barYMin) : 0;
+        tsBarChart.options.scales.y.suggestedMax = barYMax !== null ? barYMax : undefined;
+        tsBarChart.options.scales.y.title.text = `${varCfg.label} (${varCfg.unit})`;
 
-                        if (tooltipModel.body) {
-                            const dp = tooltipModel.dataPoints[0];
-                            const item = tsBarDataItems[dp.dataIndex];
-                            const valStr = (item.val > 0 ? '+' : '') + item.val.toFixed(2);
+        tsBarChart.update();
+    } else {
+        // Clean up orphaned tooltip element from bar chart
+        const oldBarTooltip = document.getElementById('chartjs-tooltip');
+        if (oldBarTooltip) oldBarTooltip.remove();
 
-                            tooltipEl.innerHTML = `
-                                <div class="tooltip-val" style="color:#2563eb; font-size:1.4rem;">${valStr} ${varCfg.unit}</div>
-                                <div class="tooltip-dist" style="font-weight:850; font-size:1rem;">${item.stateName}</div>
-                                <div class="tooltip-state">${tsStartYear}-${tsEndYear} Average</div>
-                            `;
-                        }
-
-                        tooltipEl.style.opacity = 1;
-                        tooltipEl.style.position = 'fixed';
-                        // Move to current mouse pointer (using clientX/Y for iframe safety)
-                        tooltipEl.style.left = (context.chart.canvas._lastMouseX || 0) + 'px';
-                        tooltipEl.style.top = (context.chart.canvas._lastMouseY || 0) - 100 + 'px';
-                        tooltipEl.style.pointerEvents = 'none';
-                        tooltipEl.style.transition = 'opacity 0.1s ease';
-                    }
-                }
+        tsBarChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: varCfg.label,
+                    data: data,
+                    backgroundColor: barGrad,
+                    hoverBackgroundColor: '#60a5fa',
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    categoryPercentage: 0.9,
+                    barPercentage: 0.9
+                }]
             },
-            onClick: (evt, elements) => {
-                if (elements.length > 0) {
-                    const idx = elements[0].index;
-                    const stateName = tsBarDataItems[idx].stateName;
-                    const featureKey = Object.keys(window.dataLookup).find(k => k.toUpperCase() === stateName.toUpperCase());
-                    if (featureKey) selectFeature(featureKey, true, true);
-                }
-            },
-            scales: {
-                x: {
-                    ticks: {
-                        font: { size: useFullNames ? 14 : 12, weight: '900' },
-                        color: '#000000',
-                        padding: 6
-                    },
-                    grid: { display: false },
-                    border: { display: false }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 1000,
+                    easing: 'easeOutQuart'
                 },
-                y: {
-                    grid: {
-                        color: (context) => {
-                            if (context.tick.value === 0) return data.some(v => v < 0) ? '#000000' : 'transparent';
-                            return 'rgba(0,0,0,0.03)';
+                layout: {
+                    padding: {
+                        bottom: 15
+                    }
+                },
+                onHover: (evt, elements, chart) => {
+                    const activeChart = chart || evt.chart;
+                    if (activeChart && activeChart.canvas) {
+                        activeChart.canvas.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+                    }
+                    if (elements.length > 0) {
+                        const idx = elements[0].index;
+                        const stateName = tsBarDataItems[idx].stateName;
+                        const featureKey = Object.keys(window.dataLookup).find(k => k.toUpperCase() === stateName.toUpperCase());
+                        if (featureKey) syncHover(featureKey, null, true, null, 'bar');
+                    } else {
+                        syncHover(null, null, false, null, 'bar');
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        enabled: false,
+                        position: 'nearest',
+                        external: function (context) {
+                            let tooltipEl = document.getElementById('chartjs-tooltip');
+                            if (!tooltipEl) {
+                                tooltipEl = document.createElement('div');
+                                tooltipEl.id = 'chartjs-tooltip';
+                                tooltipEl.className = 'district-tooltip ts-custom-tooltip';
+                                document.body.appendChild(tooltipEl);
+                            }
+
+                            const tooltipModel = context.tooltip;
+                            if (tooltipModel.opacity === 0) {
+                                tooltipEl.style.opacity = 0;
+                                return;
+                            }
+
+                            if (tooltipModel.body) {
+                                const dp = tooltipModel.dataPoints[0];
+                                const item = tsBarDataItems[dp.dataIndex];
+                                const valStr = (item.val > 0 ? '+' : '') + item.val.toFixed(2);
+
+                                tooltipEl.innerHTML = `
+                                    <div class="tooltip-val" style="color:#2563eb; font-size:1.4rem;">${valStr} ${varCfg.unit}</div>
+                                    <div class="tooltip-dist" style="font-weight:850; font-size:1rem;">${item.stateName}</div>
+                                    <div class="tooltip-state">${tsStartYear}-${tsEndYear} Average</div>
+                                `;
+                            }
+
+                            tooltipEl.style.opacity = 1;
+                            tooltipEl.style.position = 'fixed';
+                            // Move to current mouse pointer (using clientX/Y for iframe safety)
+                            tooltipEl.style.left = (context.chart.canvas._lastMouseX || 0) + 'px';
+                            tooltipEl.style.top = (context.chart.canvas._lastMouseY || 0) - 100 + 'px';
+                            tooltipEl.style.pointerEvents = 'none';
+                            tooltipEl.style.transition = 'opacity 0.1s ease';
+                        }
+                    }
+                },
+                onClick: (evt, elements) => {
+                    if (elements.length > 0) {
+                        const idx = elements[0].index;
+                        const stateName = tsBarDataItems[idx].stateName;
+                        const featureKey = Object.keys(window.dataLookup).find(k => k.toUpperCase() === stateName.toUpperCase());
+                        if (featureKey) selectFeature(featureKey, true, true);
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            font: { size: useFullNames ? 14 : 12, weight: '900' },
+                            color: '#000000',
+                            padding: 6
                         },
-                        lineWidth: (context) => (context.tick.value === 0 && data.some(v => v < 0)) ? 1 : 1,
-                        drawTicks: false
+                        grid: { display: false },
+                        border: { display: false }
                     },
-                    border: { display: true, color: '#000000', width: 2 },
-                    suggestedMin: barYMin !== null ? Math.min(0, barYMin) : 0,
-                    suggestedMax: barYMax !== null ? barYMax : undefined,
-                    ticks: {
-                        color: '#000000',
-                        font: { weight: '750', size: 12 },
-                        padding: 8
-                    },
-                    title: {
-                        display: true,
-                        text: `${varCfg.label} (${varCfg.unit})`,
-                        font: { size: 16, weight: '900' },
-                        color: '#000000',
-                        padding: 15
+                    y: {
+                        grid: {
+                            color: (context) => {
+                                if (context.tick.value === 0) return data.some(v => v < 0) ? '#000000' : 'transparent';
+                                return 'rgba(0,0,0,0.03)';
+                            },
+                            lineWidth: (context) => (context.tick.value === 0 && data.some(v => v < 0)) ? 1 : 1,
+                            drawTicks: false
+                        },
+                        border: { display: true, color: '#000000', width: 2 },
+                        suggestedMin: barYMin !== null ? Math.min(0, barYMin) : 0,
+                        suggestedMax: barYMax !== null ? barYMax : undefined,
+                        ticks: {
+                            color: '#000000',
+                            font: { weight: '750', size: 12 },
+                            padding: 8
+                        },
+                        title: {
+                            display: true,
+                            text: `${varCfg.label} (${varCfg.unit})`,
+                            font: { size: 16, weight: '900' },
+                            color: '#000000',
+                            padding: 15
+                        }
                     }
                 }
             }
-        }
-    });
+        });
+    }
 }
 
 function renderTimeSeriesHeader(container, stateName, varLabel, scenario) {
@@ -2154,14 +2172,10 @@ checkCMIP7Availability();
 
     // Carousel Swipe / Navigation Arrows Syncing
     const termsList = ['near-term', 'mid-term', 'long-term'];
+    let currentMobileIndex = 0;
 
-    function updateCarouselArrows() {
-        const isMobile = window.innerWidth <= 1024;
-        if (!isMobile || !mapsRow || !prevBtn || !nextBtn) return;
-
-        const scrollLeft = mapsRow.scrollLeft;
-        const width = mapsRow.clientWidth || window.innerWidth;
-        const activeIndex = Math.round(scrollLeft / width);
+    function updateCarouselArrowsForIndex(activeIndex) {
+        if (!prevBtn || !nextBtn) return;
 
         // Hide/fade prev button at index 0
         if (activeIndex === 0) {
@@ -2191,46 +2205,63 @@ checkCMIP7Availability();
         }
     }
 
+    function updateCarouselArrows() {
+        const isMobile = window.innerWidth <= 1024;
+        if (!isMobile || !mapsRow) return;
+
+        const scrollLeft = mapsRow.scrollLeft;
+        const width = mapsRow.clientWidth || window.innerWidth;
+        const activeIndex = Math.round(scrollLeft / width);
+
+        currentMobileIndex = activeIndex;
+        updateCarouselArrowsForIndex(activeIndex);
+    }
+
     if (mapsRow && prevBtn && nextBtn) {
+        let programmaticScrolling = false;
+
         // Navigate prev
         prevBtn.addEventListener('click', () => {
-            const scrollLeft = mapsRow.scrollLeft;
-            const width = mapsRow.clientWidth || window.innerWidth;
-            const activeIndex = Math.round(scrollLeft / width);
-            const prevIndex = Math.max(0, activeIndex - 1);
+            const prevIndex = Math.max(0, currentMobileIndex - 1);
+            currentMobileIndex = prevIndex;
             const targetEl = document.getElementById(termsList[prevIndex]);
             if (targetEl) {
+                programmaticScrolling = true;
                 mapsRow.scrollTo({
                     left: targetEl.offsetLeft - mapsRow.offsetLeft - 12,
                     behavior: 'smooth'
                 });
-                setTimeout(updateCarouselArrows, 400);
+                updateCarouselArrowsForIndex(prevIndex);
+                // Release guard after scroll animation completes
+                setTimeout(() => { programmaticScrolling = false; }, 600);
             }
         });
 
         // Navigate next
         nextBtn.addEventListener('click', () => {
-            const scrollLeft = mapsRow.scrollLeft;
-            const width = mapsRow.clientWidth || window.innerWidth;
-            const activeIndex = Math.round(scrollLeft / width);
-            const nextIndex = Math.min(2, activeIndex + 1);
+            const nextIndex = Math.min(2, currentMobileIndex + 1);
+            currentMobileIndex = nextIndex;
             const targetEl = document.getElementById(termsList[nextIndex]);
             if (targetEl) {
+                programmaticScrolling = true;
                 mapsRow.scrollTo({
                     left: targetEl.offsetLeft - mapsRow.offsetLeft - 12,
                     behavior: 'smooth'
                 });
-                setTimeout(updateCarouselArrows, 400);
+                updateCarouselArrowsForIndex(nextIndex);
+                // Release guard after scroll animation completes
+                setTimeout(() => { programmaticScrolling = false; }, 600);
             }
         });
 
-        // Sync Carousel Swipe -> Update Arrows
+        // Sync Carousel Swipe -> Update Arrows (only for user-initiated swipes)
         let scrollTimeout;
         mapsRow.addEventListener('scroll', () => {
+            if (programmaticScrolling) return; // Don't fight with button-triggered scrolls
             clearTimeout(scrollTimeout);
             scrollTimeout = setTimeout(() => {
                 updateCarouselArrows();
-            }, 100);
+            }, 150);
         });
     }
 

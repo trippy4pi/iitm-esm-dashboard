@@ -1,4 +1,5 @@
 # Local data files
+CSVs/
 JSONs/District_DATA.json
 JSONs/state_time_series_data.json
 JSONs/District_DATA.json.tmp
