@@ -25,6 +25,8 @@ let tsVisibleStates = new Set(); // For filtering bars
 // Data cache to avoid redundant fetches
 const _dataCache = {};
 let currentProjection = 'cmip6'; // 'cmip6' or 'cmip7'
+let startZoom = 4.5;
+let minZoomVal = 4;
 
 // Guard flag for populateSearch to prevent duplicate listeners
 let _searchInitialized = false;
@@ -367,8 +369,8 @@ function buildLegendBar(cfg) {
 // Map Initialization
 (() => {
     const width = window.innerWidth;
-    let startZoom = 4.5;
-    let minZoomVal = 4;
+    startZoom = 4.5;
+    minZoomVal = 4;
 
     if (width <= 767) {
         startZoom = 4.0;
@@ -729,7 +731,7 @@ function clearSelection() {
 
     // Recalibrate Maps to default India view
     Object.values(mapViews).forEach(m => {
-        m.setView([22.9734, 82.5], 4.5, { animate: true });
+        m.setView([22.9734, 82.5], startZoom, { animate: true });
     });
 
     updateDashboard();
@@ -1781,7 +1783,7 @@ function populateSearch() {
                                 return;
                             }
                         }
-                        m.setView([22.9734, 82.5], 4.5, { animate: false });
+                        m.setView([22.9734, 82.5], startZoom, { animate: false });
                     });
                     containers.forEach(c => c.classList.remove('is-loading'));
                     if (lockedFeatureKey) {
@@ -1814,7 +1816,7 @@ function populateSearch() {
                                 return;
                             }
                         }
-                        m.setView([22.9734, 82.5], 4.5, { animate: false });
+                        m.setView([22.9734, 82.5], startZoom, { animate: false });
                     });
                     containers.forEach(c => c.classList.remove('is-loading'));
                     if (lockedFeatureKey) {
@@ -2179,6 +2181,18 @@ checkCMIP7Availability();
 
         if (!searchContainer || !controlsPanel || !viewToggleArea) return;
 
+        const width = window.innerWidth;
+        if (width <= 767) {
+            startZoom = 4.0;
+            minZoomVal = 3.5;
+        } else if (width >= 2200) {
+            startZoom = 5.0;
+            minZoomVal = 4;
+        } else {
+            startZoom = 4.5;
+            minZoomVal = 4;
+        }
+
         if (isMobile !== wasMobile) {
             wasMobile = isMobile;
             if (isMobile) {
@@ -2210,7 +2224,10 @@ checkCMIP7Availability();
         setTimeout(() => {
             if (typeof mapViews !== 'undefined') {
                 Object.values(mapViews).forEach(m => {
-                    if (m) m.invalidateSize();
+                    if (m) {
+                        m.setMinZoom(minZoomVal);
+                        m.invalidateSize();
+                    }
                 });
             }
             if (isMobile) {
