@@ -865,10 +865,10 @@ async function updateDashboard() {
             if (isTimeSeries) {
                 if (key === 'near') {
                     const seasonLabel = tsSeasonLabels[tsSeason] || tsSeason.toUpperCase();
-                    hdr.innerText = `${seasonLabel} ${varCfg.json_key.toUpperCase()} ${scenario} (${tsStartYear}-${tsEndYear})`;
+                    hdr.innerText = `${seasonLabel} ${varCfg.json_key.toUpperCase()} CHANGE ${scenario} (${tsStartYear}-${tsEndYear})`;
                 }
             } else {
-                hdr.innerText = `${terms[key].label} ${varCfg.json_key.toUpperCase()} ${scenario} ${terms[key].years}`;
+                hdr.innerText = `${terms[key].label} ${varCfg.json_key.toUpperCase()} CHANGE ${scenario} ${terms[key].years}`;
             }
         }
 
