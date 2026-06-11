@@ -1153,14 +1153,14 @@ async function updateTimeSeriesChart() {
             scales: {
                 x: {
                     type: 'linear',
-                    min: tsStartYear === 2015 ? 2010 : tsStartYear,
-                    max: tsEndYear === 2099 ? 2100 : tsEndYear,
+                    min: tsStartYear === 2015 ? 2010 : Math.floor(tsStartYear / 5) * 5,
+                    max: tsEndYear === 2099 ? 2100 : Math.ceil(tsEndYear / 5) * 5,
                     bounds: 'data',
                     grid: { display: false },
                     ticks: {
                         color: '#000000',
                         font: { weight: '750', size: isMobile ? 9 : 12 },
-                        stepSize: (tsStartYear === 2015 && tsEndYear === 2099) ? 10 : undefined,
+                        stepSize: 5,
                         minRotation: 90,
                         maxRotation: 90,
                         callback: val => val
