@@ -223,15 +223,15 @@ function populateExportStudioModal(source, defaultTitle) {
                 <div class="export-studio-qualities">
                     <label class="export-studio-quality-pill">
                         <input type="radio" name="export-quality" value="1.5">
-                        <span class="export-studio-quality-pill-content">Standard (150 DPI)</span>
+                        <span class="export-studio-quality-pill-content">Standard<br><span style="font-size: 0.62rem; font-weight: 500; opacity: 0.85;">(150 DPI)</span></span>
                     </label>
                     <label class="export-studio-quality-pill">
                         <input type="radio" name="export-quality" value="3.0" checked>
-                        <span class="export-studio-quality-pill-content">High (300 DPI)</span>
+                        <span class="export-studio-quality-pill-content">High<br><span style="font-size: 0.62rem; font-weight: 500; opacity: 0.85;">(300 DPI)</span></span>
                     </label>
                     <label class="export-studio-quality-pill">
                         <input type="radio" name="export-quality" value="4.5">
-                        <span class="export-studio-quality-pill-content">Presentation (450 DPI)</span>
+                        <span class="export-studio-quality-pill-content">Presentation<br><span style="font-size: 0.62rem; font-weight: 500; opacity: 0.85;">(450 DPI)</span></span>
                     </label>
                 </div>
             </div>
