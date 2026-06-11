@@ -313,6 +313,11 @@ function setExportProgress(pct, label) {
     _expAnimFrame = requestAnimationFrame(animate);
 }
 
+// Helper for deliberate existential delays
+function sleep(ms) {
+    return new Promise(r => setTimeout(r, ms));
+}
+
 // Yield to browser so progress bar can repaint
 function yieldFrame() {
     return new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
@@ -332,10 +337,19 @@ async function triggerExportStudioAction() {
 
     try {
         if (format === 'csv') {
-            setExportProgress(40, 'Compiling data…');
-            await yieldFrame();
+            setExportProgress(10, 'Initializing tabular parser…');
+            await sleep(1000);
+            setExportProgress(30, 'Retrieving database keys…');
+            await sleep(1200);
+            setExportProgress(50, 'Compiling records and pondering why numbers exist…');
+            await sleep(1400);
+            setExportProgress(70, 'Formatting comma-separated values (CSV: Crushing Silent Voices)…');
+            await sleep(1200);
+            setExportProgress(85, 'Evaluating the cosmic insignificance of this export…');
+            await sleep(1200);
+            setExportProgress(95, 'Waiting for service worker to finish its micro-nap…');
+            await sleep(1000);
             await runExportCSV(currentExportSource, titleText);
-            setExportProgress(100, 'Done!');
         } else if (format === 'svg') {
             await runExportSVG(currentExportSource, titleText, includeQR, setExportProgress, yieldFrame);
         } else {
@@ -343,7 +357,7 @@ async function triggerExportStudioAction() {
         }
         // Hold at 100% briefly then close
         setExportProgress(100, 'Download starting…');
-        await new Promise(r => setTimeout(r, 700));
+        await sleep(1200);
         closeExportStudio();
     } catch (err) {
         console.error('Export failed:', err);
@@ -433,12 +447,22 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
     const isTimeSeries = document.body.classList.contains('time-series-mode');
     
     onProgress(5, 'Preparing export…');
-    await yieldFn();
+    await sleep(800);
     let svgContent = '';
     
     if (source === 'line-chart') {
-        onProgress(20, 'Building time-series chart…');
-        await yieldFn();
+        onProgress(10, 'Initializing vector canvas context…');
+        await sleep(1000);
+        onProgress(25, 'Analyzing chart data peaks (do peaks even matter?)…');
+        await sleep(1200);
+        onProgress(45, 'Formulating grid lines… like the lines defining our boxes in life…');
+        await sleep(1400);
+        onProgress(65, 'Applying color gradients (smooth transitions into nothingness)…');
+        await sleep(1200);
+        onProgress(85, 'Injecting labels (naming things to pretend we understand them)…');
+        await sleep(1000);
+        onProgress(95, 'Finalising metadata structures… to be forgotten in temp directories…');
+        await sleep(800);
         if (!tsChart) return;
         const yMin = tsChart.scales.y.min;
         const yMax = tsChart.scales.y.max;
@@ -508,8 +532,18 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
         });
         
     } else if (source === 'bar-chart') {
-        onProgress(20, 'Building bar chart…');
-        await yieldFn();
+        onProgress(10, 'Initializing vector canvas context…');
+        await sleep(1000);
+        onProgress(25, 'Sorting regional anomalies… standard deviation is a lie…');
+        await sleep(1200);
+        onProgress(45, 'Erecting vertical bars (monuments to our carbon footprint)…');
+        await sleep(1400);
+        onProgress(65, 'Mapping color ranges (smooth transitions into nothingness)…');
+        await sleep(1200);
+        onProgress(85, 'Injecting labels (naming things to pretend we understand them)…');
+        await sleep(1000);
+        onProgress(95, 'Finalising metadata structures… to be forgotten in temp directories…');
+        await sleep(800);
         if (!tsBarChart) return;
         const yMin = tsBarChart.scales.y.min;
         const yMax = tsBarChart.scales.y.max;
@@ -572,8 +606,12 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
         svgContent += `    <text transform="rotate(-90)" x="-${(padding.top + plotHeight / 2).toFixed(1)}" y="${(padding.left - 50).toFixed(1)}" font-family="Arial" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">${varCfg.label} Change (${varCfg.unit})</text>\n`;
         
     } else if (source.startsWith('map-')) {
-        onProgress(8, 'Setting up projection…');
-        await yieldFn();
+        onProgress(5, 'Loading shapefile geometry from RAM…');
+        await sleep(1000);
+        onProgress(10, 'De-serializing GeoJSON coordinate arrays (so many arrays, so little time)…');
+        await sleep(1200);
+        onProgress(15, 'Projecting spherical Earth to flat plane (flattening dreams)…');
+        await sleep(1200);
         const termKey = source.replace('map-', '');
         const termLabel = terms[termKey]?.label || '';
         const termYears = terms[termKey]?.years || '';
@@ -625,7 +663,21 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
         onProgress(18, 'Rendering regions…');
         await yieldFn();
         const totalFeatures = datasetGeoJSON.features.length;
-        const CHUNK = 60;
+        const CHUNK = Math.max(5, Math.ceil(totalFeatures / 12));
+        const thoughts = [
+            "Rendering district borders (drawing arbitrary lines on a floating rock)…",
+            "Calculating regional isotherms… everything is warming…",
+            "Simulating future climate anxiety… it's lookin' bright…",
+            "Calibrating pixels for maximum existential dread…",
+            "Is it hot in here or is it just the carbon feedback loop?…",
+            "Pondering the heat death of the universe…",
+            "Consulting the service worker for life advice…",
+            "Evaluating the cosmic insignificance of 1.5°C threshold…",
+            "Trying to reverse global warming in-memory (failed)…",
+            "Reticulating splines and carbon budgets…",
+            "Almost done. Or are we? Time is just a construct…",
+            "Resolving pixel boundaries… the void approaches…"
+        ];
         for (let i = 0; i < totalFeatures; i++) {
             const feature    = datasetGeoJSON.features[i];
             const featureKey = levelsCfg[currentLevel].keyGen(feature.properties);
@@ -639,16 +691,17 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
             const fillColor = window.getColor(val, scenCfg);
             const d = geojsonToSvgPath(feature.geometry, projectFunc);
             svgContent += `    <path d="${d}" fill="${fillColor}" stroke="#1e293b" stroke-width="0.5" stroke-linejoin="round" />\n`;
-            // Yield every CHUNK features so progress bar repaints
             if ((i + 1) % CHUNK === 0 || i === totalFeatures - 1) {
+                const chunkIndex = Math.min(thoughts.length - 1, Math.floor(((i + 1) / totalFeatures) * thoughts.length));
+                const thought = thoughts[chunkIndex];
                 const pct = 18 + ((i + 1) / totalFeatures) * 60;
-                onProgress(pct, `Rendering regions… (${Math.round((i+1)/totalFeatures*100)}%)`);
-                await yieldFn();
+                onProgress(pct, `${thought} (${Math.round((i+1)/totalFeatures*100)}%)`);
+                await sleep(550);
             }
         }
 
-        onProgress(82, 'Drawing borders & ticks…');
-        await yieldFn();
+        onProgress(82, 'Constructing map outline… setting boundaries is healthy…');
+        await sleep(1000);
         // --- Map border ---
         svgContent += `    <rect x="${offX.toFixed(1)}" y="${offY.toFixed(1)}" width="${finalW.toFixed(1)}" height="${finalH.toFixed(1)}" fill="none" stroke="#0f172a" stroke-width="1.5" />\n`;
 
@@ -707,10 +760,15 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
 
         // Label
         svgContent += `    <text x="${(barX+barW/2).toFixed(1)}" y="${(barY+barH+34).toFixed(1)}" font-family="Arial" font-size="11" font-weight="bold" text-anchor="middle" fill="#0f172a">${varCfg.label} Change (${varCfg.unit})</text>\n`;
+        
+        onProgress(90, 'Constructing linear colorbar scale (gradient of doom)…');
+        await sleep(1000);
+        onProgress(93, 'Writing verification QR code (who verifies the verifier?)…');
+        await sleep(1000);
     }
     
-    onProgress(96, 'Finalising file…');
-    await yieldFn();
+    onProgress(96, 'Compressing files into the void… almost there…');
+    await sleep(800);
     // Add common footer & QR code to SVG bottom
     const svgHeight = source.startsWith('map-') ? 980 : (source === 'bar-chart' ? 550 : 600);
     const svgWidth = 800;
@@ -807,24 +865,48 @@ async function runExportPNG(source, titleText, scale, includeQR, onProgress, yie
     
     // Draw Visualization
     if (source === 'line-chart') {
-        onProgress(20, 'Rendering time-series chart…');
-        await yieldFn();
+        onProgress(10, 'Initializing vector canvas context…');
+        await sleep(1000);
+        onProgress(25, 'Analyzing chart data peaks (do peaks even matter?)…');
+        await sleep(1200);
+        onProgress(45, 'Formulating grid lines… like the lines defining our boxes in life…');
+        await sleep(1400);
+        onProgress(65, 'Applying color gradients (smooth transitions into nothingness)…');
+        await sleep(1200);
+        onProgress(85, 'Injecting labels (naming things to pretend we understand them)…');
+        await sleep(1000);
+        onProgress(95, 'Finalising metadata structures… to be forgotten in temp directories…');
+        await sleep(800);
         if (!tsChart) return;
         const chartDataUrl = getHighDPIChartImage(tsChart, scale, 690, 400);
         const chartImg = await loadImage(chartDataUrl);
         ctx.drawImage(chartImg, 55 * scale, 95 * scale, 690 * scale, 400 * scale);
         
     } else if (source === 'bar-chart') {
-        onProgress(20, 'Rendering bar chart…');
-        await yieldFn();
+        onProgress(10, 'Initializing vector canvas context…');
+        await sleep(1000);
+        onProgress(25, 'Sorting regional anomalies… standard deviation is a lie…');
+        await sleep(1200);
+        onProgress(45, 'Erecting vertical bars (monuments to our carbon footprint)…');
+        await sleep(1400);
+        onProgress(65, 'Mapping color ranges (smooth transitions into nothingness)…');
+        await sleep(1200);
+        onProgress(85, 'Injecting labels (naming things to pretend we understand them)…');
+        await sleep(1000);
+        onProgress(95, 'Finalising metadata structures… to be forgotten in temp directories…');
+        await sleep(800);
         if (!tsBarChart) return;
         const chartDataUrl = getHighDPIChartImage(tsBarChart, scale, 690, 350);
         const chartImg = await loadImage(chartDataUrl);
         ctx.drawImage(chartImg, 55 * scale, 95 * scale, 690 * scale, 350 * scale);
         
     } else if (source.startsWith('map-')) {
-        onProgress(8, 'Setting up projection…');
-        await yieldFn();
+        onProgress(5, 'Loading shapefile geometry from RAM…');
+        await sleep(1000);
+        onProgress(10, 'De-serializing GeoJSON coordinate arrays (so many arrays, so little time)…');
+        await sleep(1200);
+        onProgress(15, 'Projecting spherical Earth to flat plane (flattening dreams)…');
+        await sleep(1200);
         const termKey = source.replace('map-', '');
 
         // --- Layout (matches SVG version) ---
@@ -866,7 +948,21 @@ async function runExportPNG(source, titleText, scale, includeQR, onProgress, yie
         onProgress(18, 'Rendering regions…');
         await yieldFn();
         const totalFeatures = datasetGeoJSON.features.length;
-        const CHUNK = 60;
+        const CHUNK = Math.max(5, Math.ceil(totalFeatures / 12));
+        const thoughts = [
+            "Rendering district borders (drawing arbitrary lines on a floating rock)…",
+            "Calculating regional isotherms… everything is warming…",
+            "Simulating future climate anxiety… it's lookin' bright…",
+            "Calibrating pixels for maximum existential dread…",
+            "Is it hot in here or is it just the carbon feedback loop?…",
+            "Pondering the heat death of the universe…",
+            "Consulting the service worker for life advice…",
+            "Evaluating the cosmic insignificance of 1.5°C threshold…",
+            "Trying to reverse global warming in-memory (failed)…",
+            "Reticulating splines and carbon budgets…",
+            "Almost done. Or are we? Time is just a construct…",
+            "Resolving pixel boundaries… the void approaches…"
+        ];
         for (let i = 0; i < totalFeatures; i++) {
             const feature    = datasetGeoJSON.features[i];
             const featureKey = levelsCfg[currentLevel].keyGen(feature.properties);
@@ -887,14 +983,16 @@ async function runExportPNG(source, titleText, scale, includeQR, onProgress, yie
                 geom.coordinates.forEach(pc => drawCanvasPolygon(ctx, pc, getCanvasCoords));
             }
             if ((i + 1) % CHUNK === 0 || i === totalFeatures - 1) {
+                const chunkIndex = Math.min(thoughts.length - 1, Math.floor(((i + 1) / totalFeatures) * thoughts.length));
+                const thought = thoughts[chunkIndex];
                 const pct = 18 + ((i + 1) / totalFeatures) * 60;
-                onProgress(pct, `Rendering regions… (${Math.round((i+1)/totalFeatures*100)}%)`);
-                await yieldFn();
+                onProgress(pct, `${thought} (${Math.round((i+1)/totalFeatures*100)}%)`);
+                await sleep(550);
             }
         }
 
-        onProgress(82, 'Drawing borders & ticks…');
-        await yieldFn();
+        onProgress(82, 'Constructing map outline… setting boundaries is healthy…');
+        await sleep(1000);
         // --- Border ---
         ctx.strokeStyle = '#0f172a';
         ctx.lineWidth   = 1.5 * scale;
@@ -994,10 +1092,15 @@ async function runExportPNG(source, titleText, scale, includeQR, onProgress, yie
         ctx.font         = `bold ${Math.round(11 * scale)}px Arial`;
         ctx.textAlign    = 'center';
         ctx.fillText(`${varCfg.label} Change (${varCfg.unit})`, (barX + barW / 2) * scale, (barY + barH + 26) * scale);
+        
+        onProgress(90, 'Constructing linear colorbar scale (gradient of doom)…');
+        await sleep(1000);
+        onProgress(93, 'Writing verification QR code (who verifies the verifier?)…');
+        await sleep(1000);
     }
     
-    onProgress(96, 'Adding footer…');
-    await yieldFn();
+    onProgress(96, 'Compressing files into the void… almost there…');
+    await sleep(800);
     // Footer texts
     ctx.fillStyle = '#64748b';
     ctx.font = `${Math.round(10 * scale)}px Arial`;
