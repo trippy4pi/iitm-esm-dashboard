@@ -1914,7 +1914,7 @@ footer {
     .mobile-filter-accordion {
         display: block;
         position: relative; /* Sit in normal document flow */
-        width: calc(100% - 24px) !important;
+        width: calc(100vw - 16px) !important;
         max-width: none !important;
         margin: 12px auto 8px !important;
         background: rgba(12, 74, 110, 0.88) !important;
