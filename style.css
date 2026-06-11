@@ -1350,7 +1350,7 @@ footer {
 }
 
 .ts-custom-tooltip {
-    z-index: 10000;
+    z-index: 90;
     transform: translate(-50%, -10%);
     background: rgba(255, 255, 255, 0.95) !important;
     border: 0.8px solid rgba(0, 0, 0, 0.12) !important;
@@ -1921,8 +1921,8 @@ footer {
 
     .mobile-controls-row .search-box {
         display: flex !important;
-        width: calc(25% - 4px) !important;
-        flex: 0 0 calc(25% - 4px) !important;
+        width: calc(29% - 4px) !important;
+        flex: 0 0 calc(29% - 4px) !important;
         height: auto !important;
         min-height: 44px;
         margin: 0 !important;
@@ -1933,15 +1933,21 @@ footer {
     }
 
     .mobile-controls-row .search-box:focus-within {
-        width: calc(25% - 4px) !important;
+        width: calc(29% - 4px) !important;
         border-color: #38bdf8 !important;
+    }
+
+    .mobile-controls-row .search-results-popup {
+        left: auto !important;
+        right: 0 !important;
+        min-width: 220px !important;
     }
 
     .mobile-filter-accordion {
         display: block;
         position: relative; /* Sit in normal document flow */
-        width: calc(75% - 4px) !important;
-        flex: 0 0 calc(75% - 4px) !important;
+        width: calc(71% - 4px) !important;
+        flex: 0 0 calc(71% - 4px) !important;
         max-width: none !important;
         margin: 0 !important;
         background: rgba(12, 74, 110, 0.88) !important;
