@@ -337,17 +337,17 @@ async function triggerExportStudioAction() {
 
     try {
         if (format === 'csv') {
-            setExportProgress(10, 'Initializing tabular parser…');
+            setExportProgress(10, 'Compiling regional climate data attributes…');
             await sleep(1000);
-            setExportProgress(30, 'Retrieving database keys…');
+            setExportProgress(30, 'Fact: India has reached nearly 50% installed non-fossil fuel electricity capacity…');
             await sleep(1200);
-            setExportProgress(50, 'Compiling records and pondering why numbers exist…');
+            setExportProgress(50, 'Fact: India aims to expand its non-fossil energy capacity to 500 GW by 2030…');
             await sleep(1400);
-            setExportProgress(70, 'Formatting comma-separated values (CSV: Crushing Silent Voices)…');
+            setExportProgress(70, 'Formatting data cells according to ISO standard layout…');
             await sleep(1200);
-            setExportProgress(85, 'Evaluating the cosmic insignificance of this export…');
+            setExportProgress(85, 'Validating tabular datasets for policy & analytical export…');
             await sleep(1200);
-            setExportProgress(95, 'Waiting for service worker to finish its micro-nap…');
+            setExportProgress(95, 'Structuring output CSV fields…');
             await sleep(1000);
             await runExportCSV(currentExportSource, titleText);
         } else if (format === 'svg') {
@@ -453,15 +453,15 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
     if (source === 'line-chart') {
         onProgress(10, 'Initializing vector canvas context…');
         await sleep(1000);
-        onProgress(25, 'Analyzing chart data peaks (do peaks even matter?)…');
+        onProgress(25, 'Reality: Observed average temperatures in India have risen by 0.7°C since 1901…');
         await sleep(1200);
-        onProgress(45, 'Formulating grid lines… like the lines defining our boxes in life…');
+        onProgress(45, 'Risk: Monsoon variability directly impacts rainfed agriculture across India…');
         await sleep(1400);
-        onProgress(65, 'Applying color gradients (smooth transitions into nothingness)…');
+        onProgress(65, 'Hope: Decarbonization pathways help stabilize long-term temperature trajectories…');
         await sleep(1200);
-        onProgress(85, 'Injecting labels (naming things to pretend we understand them)…');
+        onProgress(85, 'Hope: National policies aim for substantial emission intensity reductions by 2030…');
         await sleep(1000);
-        onProgress(95, 'Finalising metadata structures… to be forgotten in temp directories…');
+        onProgress(95, 'Applying chart styling and formatting vector nodes…');
         await sleep(800);
         if (!tsChart) return;
         const yMin = tsChart.scales.y.min;
@@ -534,15 +534,15 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
     } else if (source === 'bar-chart') {
         onProgress(10, 'Initializing vector canvas context…');
         await sleep(1000);
-        onProgress(25, 'Sorting regional anomalies… standard deviation is a lie…');
+        onProgress(25, 'Reality: Temperature anomalies in India have become more pronounced since 2000…');
         await sleep(1200);
-        onProgress(45, 'Erecting vertical bars (monuments to our carbon footprint)…');
+        onProgress(45, 'Risk: Heatwave duration is projected to increase substantially by mid-century…');
         await sleep(1400);
-        onProgress(65, 'Mapping color ranges (smooth transitions into nothingness)…');
+        onProgress(65, 'Hope: Scaling grid storage and solar capacity reduces reliance on fossil fuels…');
         await sleep(1200);
-        onProgress(85, 'Injecting labels (naming things to pretend we understand them)…');
+        onProgress(85, 'Hope: India targets net-zero carbon emissions by 2070…');
         await sleep(1000);
-        onProgress(95, 'Finalising metadata structures… to be forgotten in temp directories…');
+        onProgress(95, 'Drawing chart geometries and preparing final rendering…');
         await sleep(800);
         if (!tsBarChart) return;
         const yMin = tsBarChart.scales.y.min;
@@ -606,11 +606,11 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
         svgContent += `    <text transform="rotate(-90)" x="-${(padding.top + plotHeight / 2).toFixed(1)}" y="${(padding.left - 50).toFixed(1)}" font-family="Arial" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">${varCfg.label} Change (${varCfg.unit})</text>\n`;
         
     } else if (source.startsWith('map-')) {
-        onProgress(5, 'Loading shapefile geometry from RAM…');
+        onProgress(5, 'Loading district boundaries from GeoJSON data…');
         await sleep(1000);
-        onProgress(10, 'De-serializing GeoJSON coordinate arrays (so many arrays, so little time)…');
+        onProgress(10, 'Reality: Climate changes are regional, requiring local-level adaptation planning…');
         await sleep(1200);
-        onProgress(15, 'Projecting spherical Earth to flat plane (flattening dreams)…');
+        onProgress(15, 'Applying equirectangular projection to geographic coordinate system…');
         await sleep(1200);
         const termKey = source.replace('map-', '');
         const termLabel = terms[termKey]?.label || '';
@@ -665,18 +665,18 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
         const totalFeatures = datasetGeoJSON.features.length;
         const CHUNK = Math.max(5, Math.ceil(totalFeatures / 12));
         const thoughts = [
-            "Rendering district borders (drawing arbitrary lines on a floating rock)…",
-            "Calculating regional isotherms… everything is warming…",
-            "Simulating future climate anxiety… it's lookin' bright…",
-            "Calibrating pixels for maximum existential dread…",
-            "Is it hot in here or is it just the carbon feedback loop?…",
-            "Pondering the heat death of the universe…",
-            "Consulting the service worker for life advice…",
-            "Evaluating the cosmic insignificance of 1.5°C threshold…",
-            "Trying to reverse global warming in-memory (failed)…",
-            "Reticulating splines and carbon budgets…",
-            "Almost done. Or are we? Time is just a construct…",
-            "Resolving pixel boundaries… the void approaches…"
+            "Risk: Climate models project up to 4.4°C temp rise in India by 2099 under high emissions…",
+            "Risk: Glacial melt threatens water flow stability in Ganges, Indus & Brahmaputra basins…",
+            "Risk: Sea level rise poses severe risks to Mumbai, Chennai, and other coastal hubs…",
+            "Risk: Rainfed crop yields could drop up to 15% by 2050 without active adaptation…",
+            "Risk: Heatwaves in India are projected to increase 2.5x in duration by mid-century…",
+            "Risk: Extreme rainfall and flash flood events are rising in the Himalayan region…",
+            "Hope: India has committed to achieving net-zero emissions by 2070…",
+            "Hope: India's solar energy capacity has grown rapidly, exceeding 70 GW…",
+            "Hope: India targets 500 GW of non-fossil fuel capacity by 2030…",
+            "Hope: National Green Hydrogen Mission aims to accelerate clean fuels transition…",
+            "Hope: Climate-resilient agricultural practices are being adopted across dryland states…",
+            "Hope: Clean energy transitions can create millions of sustainable green jobs in India…"
         ];
         for (let i = 0; i < totalFeatures; i++) {
             const feature    = datasetGeoJSON.features[i];
@@ -700,7 +700,7 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
             }
         }
 
-        onProgress(82, 'Constructing map outline… setting boundaries is healthy…');
+        onProgress(82, 'Drawing national boundary lines and styling coordinate borders…');
         await sleep(1000);
         // --- Map border ---
         svgContent += `    <rect x="${offX.toFixed(1)}" y="${offY.toFixed(1)}" width="${finalW.toFixed(1)}" height="${finalH.toFixed(1)}" fill="none" stroke="#0f172a" stroke-width="1.5" />\n`;
@@ -761,13 +761,13 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
         // Label
         svgContent += `    <text x="${(barX+barW/2).toFixed(1)}" y="${(barY+barH+34).toFixed(1)}" font-family="Arial" font-size="11" font-weight="bold" text-anchor="middle" fill="#0f172a">${varCfg.label} Change (${varCfg.unit})</text>\n`;
         
-        onProgress(90, 'Constructing linear colorbar scale (gradient of doom)…');
+        onProgress(90, 'Constructing linear colorbar scale…');
         await sleep(1000);
-        onProgress(93, 'Writing verification QR code (who verifies the verifier?)…');
+        onProgress(93, 'Adding verification QR code layer…');
         await sleep(1000);
     }
     
-    onProgress(96, 'Compressing files into the void… almost there…');
+    onProgress(96, 'Finalising vector nodes and file compilation…');
     await sleep(800);
     // Add common footer & QR code to SVG bottom
     const svgHeight = source.startsWith('map-') ? 980 : (source === 'bar-chart' ? 550 : 600);
@@ -867,15 +867,15 @@ async function runExportPNG(source, titleText, scale, includeQR, onProgress, yie
     if (source === 'line-chart') {
         onProgress(10, 'Initializing vector canvas context…');
         await sleep(1000);
-        onProgress(25, 'Analyzing chart data peaks (do peaks even matter?)…');
+        onProgress(25, 'Reality: Observed average temperatures in India have risen by 0.7°C since 1901…');
         await sleep(1200);
-        onProgress(45, 'Formulating grid lines… like the lines defining our boxes in life…');
+        onProgress(45, 'Risk: Monsoon variability directly impacts rainfed agriculture across India…');
         await sleep(1400);
-        onProgress(65, 'Applying color gradients (smooth transitions into nothingness)…');
+        onProgress(65, 'Hope: Decarbonization pathways help stabilize long-term temperature trajectories…');
         await sleep(1200);
-        onProgress(85, 'Injecting labels (naming things to pretend we understand them)…');
+        onProgress(85, 'Hope: National policies aim for substantial emission intensity reductions by 2030…');
         await sleep(1000);
-        onProgress(95, 'Finalising metadata structures… to be forgotten in temp directories…');
+        onProgress(95, 'Applying chart styling and formatting vector nodes…');
         await sleep(800);
         if (!tsChart) return;
         const chartDataUrl = getHighDPIChartImage(tsChart, scale, 690, 400);
@@ -885,15 +885,15 @@ async function runExportPNG(source, titleText, scale, includeQR, onProgress, yie
     } else if (source === 'bar-chart') {
         onProgress(10, 'Initializing vector canvas context…');
         await sleep(1000);
-        onProgress(25, 'Sorting regional anomalies… standard deviation is a lie…');
+        onProgress(25, 'Reality: Temperature anomalies in India have become more pronounced since 2000…');
         await sleep(1200);
-        onProgress(45, 'Erecting vertical bars (monuments to our carbon footprint)…');
+        onProgress(45, 'Risk: Heatwave duration is projected to increase substantially by mid-century…');
         await sleep(1400);
-        onProgress(65, 'Mapping color ranges (smooth transitions into nothingness)…');
+        onProgress(65, 'Hope: Scaling grid storage and solar capacity reduces reliance on fossil fuels…');
         await sleep(1200);
-        onProgress(85, 'Injecting labels (naming things to pretend we understand them)…');
+        onProgress(85, 'Hope: India targets net-zero carbon emissions by 2070…');
         await sleep(1000);
-        onProgress(95, 'Finalising metadata structures… to be forgotten in temp directories…');
+        onProgress(95, 'Drawing chart geometries and preparing final rendering…');
         await sleep(800);
         if (!tsBarChart) return;
         const chartDataUrl = getHighDPIChartImage(tsBarChart, scale, 690, 350);
@@ -901,11 +901,11 @@ async function runExportPNG(source, titleText, scale, includeQR, onProgress, yie
         ctx.drawImage(chartImg, 55 * scale, 95 * scale, 690 * scale, 350 * scale);
         
     } else if (source.startsWith('map-')) {
-        onProgress(5, 'Loading shapefile geometry from RAM…');
+        onProgress(5, 'Loading district boundaries from GeoJSON data…');
         await sleep(1000);
-        onProgress(10, 'De-serializing GeoJSON coordinate arrays (so many arrays, so little time)…');
+        onProgress(10, 'Reality: Climate changes are regional, requiring local-level adaptation planning…');
         await sleep(1200);
-        onProgress(15, 'Projecting spherical Earth to flat plane (flattening dreams)…');
+        onProgress(15, 'Applying equirectangular projection to geographic coordinate system…');
         await sleep(1200);
         const termKey = source.replace('map-', '');
 
@@ -950,18 +950,18 @@ async function runExportPNG(source, titleText, scale, includeQR, onProgress, yie
         const totalFeatures = datasetGeoJSON.features.length;
         const CHUNK = Math.max(5, Math.ceil(totalFeatures / 12));
         const thoughts = [
-            "Rendering district borders (drawing arbitrary lines on a floating rock)…",
-            "Calculating regional isotherms… everything is warming…",
-            "Simulating future climate anxiety… it's lookin' bright…",
-            "Calibrating pixels for maximum existential dread…",
-            "Is it hot in here or is it just the carbon feedback loop?…",
-            "Pondering the heat death of the universe…",
-            "Consulting the service worker for life advice…",
-            "Evaluating the cosmic insignificance of 1.5°C threshold…",
-            "Trying to reverse global warming in-memory (failed)…",
-            "Reticulating splines and carbon budgets…",
-            "Almost done. Or are we? Time is just a construct…",
-            "Resolving pixel boundaries… the void approaches…"
+            "Risk: Climate models project up to 4.4°C temp rise in India by 2099 under high emissions…",
+            "Risk: Glacial melt threatens water flow stability in Ganges, Indus & Brahmaputra basins…",
+            "Risk: Sea level rise poses severe risks to Mumbai, Chennai, and other coastal hubs…",
+            "Risk: Rainfed crop yields could drop up to 15% by 2050 without active adaptation…",
+            "Risk: Heatwaves in India are projected to increase 2.5x in duration by mid-century…",
+            "Risk: Extreme rainfall and flash flood events are rising in the Himalayan region…",
+            "Hope: India has committed to achieving net-zero emissions by 2070…",
+            "Hope: India's solar energy capacity has grown rapidly, exceeding 70 GW…",
+            "Hope: India targets 500 GW of non-fossil fuel capacity by 2030…",
+            "Hope: National Green Hydrogen Mission aims to accelerate clean fuels transition…",
+            "Hope: Climate-resilient agricultural practices are being adopted across dryland states…",
+            "Hope: Clean energy transitions can create millions of sustainable green jobs in India…"
         ];
         for (let i = 0; i < totalFeatures; i++) {
             const feature    = datasetGeoJSON.features[i];
@@ -991,7 +991,7 @@ async function runExportPNG(source, titleText, scale, includeQR, onProgress, yie
             }
         }
 
-        onProgress(82, 'Constructing map outline… setting boundaries is healthy…');
+        onProgress(82, 'Drawing national boundary lines and styling coordinate borders…');
         await sleep(1000);
         // --- Border ---
         ctx.strokeStyle = '#0f172a';
@@ -1093,13 +1093,13 @@ async function runExportPNG(source, titleText, scale, includeQR, onProgress, yie
         ctx.textAlign    = 'center';
         ctx.fillText(`${varCfg.label} Change (${varCfg.unit})`, (barX + barW / 2) * scale, (barY + barH + 26) * scale);
         
-        onProgress(90, 'Constructing linear colorbar scale (gradient of doom)…');
+        onProgress(90, 'Constructing linear colorbar scale…');
         await sleep(1000);
-        onProgress(93, 'Writing verification QR code (who verifies the verifier?)…');
+        onProgress(93, 'Adding verification QR code layer…');
         await sleep(1000);
     }
     
-    onProgress(96, 'Compressing files into the void… almost there…');
+    onProgress(96, 'Finalising vector nodes and file compilation…');
     await sleep(800);
     // Footer texts
     ctx.fillStyle = '#64748b';
