@@ -2390,10 +2390,19 @@ footer {
 
     /* Legends styling adjustments on mobile */
     .legend {
-        width: calc(100% - 24px) !important;
-        bottom: 12px !important;
-        left: 12px !important;
-        padding: 8px !important;
+        width: 100% !important;
+        bottom: auto !important;
+        left: auto !important;
+        padding: 8px 0.5px !important;
+    }
+    .legend-title {
+        padding: 0 12px !important;
+    }
+    .legend-scale {
+        margin: 0 !important;
+    }
+    .legend-ticks {
+        margin: 0 10px !important;
     }
 
     /* 8. Footer Layout Stacking */
