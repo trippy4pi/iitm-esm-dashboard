@@ -472,8 +472,8 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
         const maxYear = tsEndYear || 2099;
         
         const svgWidth = 800;
-        const svgHeight = 600;
-        const padding = { top: 110, right: 50, bottom: 90, left: 70 };
+        const svgHeight = 650;
+        const padding = { top: 110, right: 50, bottom: 140, left: 70 };
         const plotWidth = svgWidth - padding.left - padding.right;
         const plotHeight = svgHeight - padding.top - padding.bottom;
         
@@ -481,30 +481,14 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
         const getSvgY = (val) => padding.top + plotHeight - ((val - yMin) / (yMax - yMin)) * plotHeight;
         
         const subtitleText = `Scenario: ${scenario} | Season: ${seasonLabel} | Period: ${minYear}-${maxYear}`;
-        
-        // Build area gradients definitions
-        let gradientsDefs = '';
-        tsChart.data.datasets.forEach((ds, idx) => {
-            gradientsDefs += `
-        <linearGradient id="area-grad-${idx}" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="${ds.borderColor}" stop-opacity="0.28" />
-            <stop offset="100%" stop-color="${ds.borderColor}" stop-opacity="0.0" />
-        </linearGradient>`;
-        });
 
         svgContent += `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgWidth} ${svgHeight}" width="100%" height="100%">
-    <defs>
-        <linearGradient id="plot-bg-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#f8fafc" />
-            <stop offset="100%" stop-color="#ffffff" />
-        </linearGradient>${gradientsDefs}
-    </defs>
     <rect width="${svgWidth}" height="${svgHeight}" fill="#ffffff" />
     
     <text x="${svgWidth / 2}" y="45" font-family="System-UI, -apple-system, sans-serif" font-size="20" font-weight="bold" text-anchor="middle" fill="#0f172a">${titleText}</text>
     <text x="${svgWidth / 2}" y="72" font-family="System-UI, -apple-system, sans-serif" font-size="13" fill="#64748b" text-anchor="middle">${subtitleText}</text>
     
-    <rect x="${padding.left}" y="${padding.top}" width="${plotWidth}" height="${plotHeight}" fill="url(#plot-bg-grad)" stroke="#cbd5e1" stroke-width="1.0" />
+    <rect x="${padding.left}" y="${padding.top}" width="${plotWidth}" height="${plotHeight}" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
 `;
 
         // Horizontal Gridlines & Labels
@@ -526,7 +510,7 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
         svgContent += `    <text transform="rotate(-90)" x="-${(padding.top + plotHeight / 2).toFixed(1)}" y="${(padding.left - 50).toFixed(1)}" font-family="System-UI, -apple-system, sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">${varCfg.label} Change (${varCfg.unit})</text>\n`;
         
         // Draw lines
-        tsChart.data.datasets.forEach((ds, idx) => {
+        tsChart.data.datasets.forEach(ds => {
             let points = [];
             ds.data.forEach(pt => {
                 if (pt && pt.y !== null && pt.y !== undefined) {
@@ -534,17 +518,6 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
                 }
             });
             if (points.length > 0) {
-                // Draw filled area underneath the line first
-                const firstPt = points[0];
-                const lastPt = points[points.length - 1];
-                const firstPtX = firstPt.split(',')[0];
-                const lastPtX = lastPt.split(',')[0];
-                const baselineY = (padding.top + plotHeight).toFixed(1);
-                
-                const fillPoints = `${firstPt} ${points.join(' ')} ${lastPtX},${baselineY} ${firstPtX},${baselineY}`;
-                svgContent += `    <polygon points="${fillPoints}" fill="url(#area-grad-${idx})" stroke="none" />\n`;
-                
-                // Draw the line path
                 svgContent += `    <polyline points="${points.join(' ')}" fill="none" stroke="${ds.borderColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />\n`;
             }
         });
@@ -587,18 +560,12 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
         const subtitleText = `Scenario: ${scenario} | Season: ${seasonLabel} | Period: 2015-2099 Anomalies`;
         
         svgContent += `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgWidth} ${svgHeight}" width="100%" height="100%">
-    <defs>
-        <linearGradient id="plot-bg-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#f8fafc" />
-            <stop offset="100%" stop-color="#ffffff" />
-        </linearGradient>
-    </defs>
     <rect width="${svgWidth}" height="${svgHeight}" fill="#ffffff" />
     
     <text x="${svgWidth / 2}" y="45" font-family="System-UI, -apple-system, sans-serif" font-size="20" font-weight="bold" text-anchor="middle" fill="#0f172a">${titleText}</text>
     <text x="${svgWidth / 2}" y="72" font-family="System-UI, -apple-system, sans-serif" font-size="13" fill="#64748b" text-anchor="middle">${subtitleText}</text>
     
-    <rect x="${padding.left}" y="${padding.top}" width="${plotWidth}" height="${plotHeight}" fill="url(#plot-bg-grad)" stroke="#cbd5e1" stroke-width="1.0" />
+    <rect x="${padding.left}" y="${padding.top}" width="${plotWidth}" height="${plotHeight}" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
 `;
 
         // Horizontal Gridlines & Labels
@@ -802,7 +769,7 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
     onProgress(96, 'Finalising vector nodes and file compilation…');
     await sleep(800);
     // Add common footer & QR code to SVG bottom
-    const svgHeight = source.startsWith('map-') ? 980 : (source === 'bar-chart' ? 550 : 600);
+    const svgHeight = source.startsWith('map-') ? 980 : (source === 'bar-chart' ? 550 : 650);
     const svgWidth = 800;
     
     svgContent += `    <text x="40" y="${svgHeight - 45}" font-family="Arial" font-size="10" fill="#64748b">Source: Bias Corrected 0.25°×0.25° product developed at CCCR, IITM Pune</text>\n`;
