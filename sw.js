@@ -1,10 +1,10 @@
-const CACHE_NAME = "esm-viewer-v5";
+const CACHE_NAME = "esm-viewer-v6";
 const ASSETS = [
   "./",
   "./index.html",
   "./style.css",
   "./script.js",
-  "./export-studio.js?v=20260612b",
+  "./export-studio.js?v=20260612d",
   "./manifest.json",
   "./assets/favicon.png",
   "./assets/IITM_Logo.png",

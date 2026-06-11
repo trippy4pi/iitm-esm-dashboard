@@ -87,8 +87,6 @@ function getExportFilename(source, titleText, ext) {
     if (source.startsWith('map-')) {
         type = `map-${source.replace('map-', '')}`;
     } else if (source === 'line-chart') {
-        onProgress(20, 'Rendering time-series chart…');
-        await yieldFn();
         type = 'chart-line';
     } else if (source === 'bar-chart') {
         type = 'chart-bar';
