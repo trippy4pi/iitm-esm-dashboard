@@ -1052,12 +1052,12 @@ async function updateTimeSeriesChart() {
             label: displayStateName.toUpperCase(),
             data: statePoints,
             borderColor: '#ef4444',
-            borderWidth: 3,
-            pointRadius: 3,
+            borderWidth: isMobile ? 1.2 : 3,
+            pointRadius: isMobile ? 1.5 : 3,
             pointBackgroundColor: '#ffffff',
             pointBorderColor: '#ef4444',
-            pointBorderWidth: 2.5,
-            pointHoverRadius: 5,
+            pointBorderWidth: isMobile ? 1 : 2.5,
+            pointHoverRadius: isMobile ? 3 : 5,
             pointHoverBackgroundColor: '#ef4444',
             pointHoverBorderColor: '#ffffff',
             pointHoverBorderWidth: 2,
@@ -1072,12 +1072,12 @@ async function updateTimeSeriesChart() {
         label: `INDIA`,
         data: indiaPoints,
         borderColor: '#22c55e',
-        borderWidth: 3,
-        pointRadius: hasStateSelection ? 0 : 3,
+        borderWidth: isMobile ? 1.2 : 3,
+        pointRadius: hasStateSelection ? 0 : (isMobile ? 1.5 : 3),
         pointBackgroundColor: '#ffffff',
         pointBorderColor: '#22c55e',
-        pointBorderWidth: 2.5,
-        pointHoverRadius: 5,
+        pointBorderWidth: isMobile ? 1 : 2.5,
+        pointHoverRadius: isMobile ? 3 : 5,
         pointHoverBackgroundColor: '#22c55e',
         pointHoverBorderColor: '#ffffff',
         pointHoverBorderWidth: 2,
@@ -1142,15 +1142,18 @@ async function updateTimeSeriesChart() {
             scales: {
                 x: {
                     type: 'linear',
+                    min: tsStartYear,
+                    max: tsEndYear,
+                    bounds: 'data',
                     grid: { display: false },
                     ticks: {
                         color: '#000000',
-                        font: { weight: '750', size: 12 },
+                        font: { weight: '750', size: isMobile ? 9 : 12 },
                         callback: val => val
                     },
                     border: { display: false },
                     title: {
-                        display: true,
+                        display: !isMobile,
                         text: 'Year',
                         color: '#000000',
                         font: { weight: '800', size: 14 }
@@ -1164,23 +1167,23 @@ async function updateTimeSeriesChart() {
                     },
                     ticks: {
                         color: '#000000',
-                        font: { weight: '750', size: 12 },
-                        padding: 8
+                        font: { weight: '750', size: isMobile ? 9 : 12 },
+                        padding: isMobile ? 3 : 8
                     },
                     border: { display: true, color: '#000000', width: 2 },
                     suggestedMin: yMin !== null ? Math.min(0, yMin) : 0,
                     suggestedMax: yMax !== null ? yMax : undefined,
                     title: {
-                        display: !isMobile,
-                        text: `${varCfg.label} (${varCfg.unit})`,
+                        display: true,
+                        text: isMobile ? `${varCfg.json_key.toUpperCase()} CHANGE (${varCfg.unit})` : `${varCfg.label} (${varCfg.unit})`,
                         color: '#000000',
-                        font: { weight: '900', size: 16 },
-                        padding: 15
+                        font: { weight: '850', size: isMobile ? 9 : 16 },
+                        padding: isMobile ? 2 : 15
                     }
                 }
             },
             layout: {
-                padding: { top: 0, bottom: 0, left: isMobile ? 0 : 5, right: 0 }
+                padding: { top: isMobile ? 2 : 0, bottom: isMobile ? 2 : 0, left: isMobile ? 2 : 5, right: isMobile ? 2 : 0 }
             },
             plugins: {
                 legend: {
@@ -1409,14 +1412,23 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
         tsBarChart.data.datasets[0].data = data;
         tsBarChart.data.datasets[0].backgroundColor = barGrad;
 
-        tsBarChart.options.scales.x.ticks.font.size = isMobile ? 8 : (useFullNames ? 14 : 12);
+        tsBarChart.options.scales.x.ticks.font.size = isMobile ? 9 : (useFullNames ? 14 : 12);
         tsBarChart.options.scales.x.ticks.maxRotation = isMobile ? 90 : 45;
         tsBarChart.options.scales.x.ticks.minRotation = isMobile ? 90 : 0;
         tsBarChart.options.scales.y.suggestedMin = barYMin !== null ? Math.min(0, barYMin) : 0;
         tsBarChart.options.scales.y.suggestedMax = barYMax !== null ? barYMax : undefined;
-        tsBarChart.options.scales.y.title.display = !isMobile;
-        tsBarChart.options.scales.y.title.text = `${varCfg.label} (${varCfg.unit})`;
-        tsBarChart.options.layout.padding.left = isMobile ? 0 : 5;
+        tsBarChart.options.scales.y.title.display = true;
+        tsBarChart.options.scales.y.title.text = isMobile ? `${varCfg.json_key.toUpperCase()} CHANGE (${varCfg.unit})` : `${varCfg.label} (${varCfg.unit})`;
+        tsBarChart.options.scales.y.title.font = { size: isMobile ? 9 : 16, weight: '900' };
+        tsBarChart.options.scales.y.title.padding = isMobile ? 2 : 15;
+        tsBarChart.options.scales.y.ticks.font = { size: isMobile ? 9 : 12, weight: '750' };
+        tsBarChart.options.scales.y.ticks.padding = isMobile ? 3 : 8;
+        tsBarChart.options.layout.padding = {
+            top: isMobile ? 2 : 0,
+            bottom: isMobile ? 2 : 15,
+            left: isMobile ? 2 : 5,
+            right: isMobile ? 2 : 0
+        };
 
         tsBarChart.update();
     } else {
@@ -1448,8 +1460,10 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
                 },
                 layout: {
                     padding: {
-                        bottom: 15,
-                        left: isMobile ? 0 : 5
+                        top: isMobile ? 2 : 0,
+                        bottom: isMobile ? 2 : 15,
+                        left: isMobile ? 2 : 5,
+                        right: isMobile ? 2 : 0
                     }
                 },
                 onHover: (evt, elements, chart) => {
@@ -1519,11 +1533,11 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
                 scales: {
                     x: {
                         ticks: {
-                            font: { size: window.innerWidth <= 1024 ? 8 : (useFullNames ? 14 : 12), weight: '900' },
+                            font: { size: isMobile ? 9 : (useFullNames ? 14 : 12), weight: '900' },
                             color: '#000000',
-                            padding: 6,
-                            maxRotation: window.innerWidth <= 1024 ? 90 : 45,
-                            minRotation: window.innerWidth <= 1024 ? 90 : 0
+                            padding: isMobile ? 3 : 6,
+                            maxRotation: isMobile ? 90 : 45,
+                            minRotation: isMobile ? 90 : 0
                         },
                         grid: { display: false },
                         border: { display: false }
@@ -1542,15 +1556,15 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
                         suggestedMax: barYMax !== null ? barYMax : undefined,
                         ticks: {
                             color: '#000000',
-                            font: { weight: '750', size: 12 },
-                            padding: 8
+                            font: { weight: '750', size: isMobile ? 9 : 12 },
+                            padding: isMobile ? 3 : 8
                         },
                         title: {
-                            display: !isMobile,
-                            text: `${varCfg.label} (${varCfg.unit})`,
-                            font: { size: 16, weight: '900' },
+                            display: true,
+                            text: isMobile ? `${varCfg.json_key.toUpperCase()} CHANGE (${varCfg.unit})` : `${varCfg.label} (${varCfg.unit})`,
+                            font: { size: isMobile ? 9 : 16, weight: '900' },
                             color: '#000000',
-                            padding: 15
+                            padding: isMobile ? 2 : 15
                         }
                     }
                 }
@@ -1831,6 +1845,16 @@ function populateSearch() {
 
     // Bar Chart Filter Setup
     setupBarFilter();
+
+    // Auto-trigger Time Series mode if mode=ts query parameter is present
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('mode') === 'ts') {
+        const viewToggle = document.getElementById('view-mode-toggle');
+        if (viewToggle) {
+            viewToggle.checked = true;
+            document.body.classList.add('time-series-mode');
+        }
+    }
 
     // Initial load
     load();

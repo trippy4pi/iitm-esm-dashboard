@@ -2325,7 +2325,7 @@ footer {
         display: flex !important;
         flex-direction: column !important;
         overflow: hidden !important;
-        padding: 8px 12px !important;
+        padding: 4px 6px !important;
         height: 100% !important;
         box-sizing: border-box !important;
     }
@@ -2346,10 +2346,10 @@ footer {
 
     body.time-series-mode #mid-term-header {
         height: auto !important;
-        min-height: 56px !important;
+        min-height: auto !important;
         flex-direction: column !important;
-        padding: 10px 1rem !important;
-        gap: 8px !important;
+        padding: 4px 8px !important;
+        gap: 4px !important;
         align-items: center !important;
         justify-content: center !important;
         border-bottom: 2px solid #000000 !important;
@@ -2404,15 +2404,17 @@ footer {
     }
 
     body.time-series-mode .ts-window canvas {
-        padding: 18px 0.5rem 1.2rem 1.8rem !important;
+        padding: 2px 4px !important;
+        flex: 1 !important;
+        height: 1% !important;
     }
 
-    #bar-graph-header {
+    body.time-series-mode #bar-graph-header {
         height: auto !important;
-        min-height: 56px !important;
+        min-height: auto !important;
         flex-direction: column !important;
-        padding: 10px 1rem 14px 1rem !important;
-        gap: 8px !important;
+        padding: 4px 8px !important;
+        gap: 4px !important;
         align-items: center !important;
         justify-content: center !important;
         border-bottom: 2px solid #000000 !important;
@@ -2433,7 +2435,7 @@ footer {
         justify-content: center !important;
         width: 100% !important;
         gap: 10px !important;
-        margin-top: 4px;
+        margin-top: 2px !important;
     }
 
     /* Legends styling adjustments on mobile */
