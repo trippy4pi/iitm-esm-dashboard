@@ -87,6 +87,8 @@ function getExportFilename(source, titleText, ext) {
     if (source.startsWith('map-')) {
         type = `map-${source.replace('map-', '')}`;
     } else if (source === 'line-chart') {
+        onProgress(20, 'Rendering time-series chart…');
+        await yieldFn();
         type = 'chart-line';
     } else if (source === 'bar-chart') {
         type = 'chart-bar';
@@ -271,40 +273,87 @@ function populateExportStudioModal(source, defaultTitle) {
     });
 }
 
+// ── Progress Overlay ─────────────────────────────────────────────────────────
+function showExportProgress() {
+    const modal = document.getElementById('export-studio-modal');
+    modal.innerHTML = `
+        <div class="export-studio-header">
+            <h3 class="export-studio-title">Export Studio</h3>
+        </div>
+        <div class="export-progress-wrap">
+            <div class="export-progress-icon">⬇</div>
+            <div class="export-progress-stage" id="exp-stage">Preparing…</div>
+            <div class="export-progress-track">
+                <div class="export-progress-bar" id="exp-bar" style="width:0%"></div>
+                <div class="export-progress-shimmer"></div>
+            </div>
+            <div class="export-progress-pct" id="exp-pct">0%</div>
+        </div>
+    `;
+}
+
+let _expAnimFrame = null;
+let _expTarget = 0;
+let _expCurrent = 0;
+
+function setExportProgress(pct, label) {
+    _expTarget = pct;
+    const stageEl = document.getElementById('exp-stage');
+    const pctEl   = document.getElementById('exp-pct');
+    if (stageEl && label) stageEl.textContent = label;
+
+    // Smoothly animate bar to target
+    if (_expAnimFrame) cancelAnimationFrame(_expAnimFrame);
+    const animate = () => {
+        _expCurrent += (_expTarget - _expCurrent) * 0.12;
+        if (Math.abs(_expTarget - _expCurrent) < 0.3) _expCurrent = _expTarget;
+        const bar = document.getElementById('exp-bar');
+        if (bar) bar.style.width = _expCurrent.toFixed(1) + '%';
+        if (pctEl) pctEl.textContent = Math.round(_expCurrent) + '%';
+        if (_expCurrent < _expTarget) _expAnimFrame = requestAnimationFrame(animate);
+    };
+    _expAnimFrame = requestAnimationFrame(animate);
+}
+
+// Yield to browser so progress bar can repaint
+function yieldFrame() {
+    return new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
+}
+
 // Trigger export actions
 async function triggerExportStudioAction() {
-    const actionBtn = document.getElementById('export-action-btn');
     const titleInput = document.getElementById('export-title-input');
-    const format = document.querySelector('input[name="export-format"]:checked')?.value || 'png';
-    const scale = parseFloat(document.querySelector('input[name="export-quality"]:checked')?.value || '3.0');
-    const includeQR = document.getElementById('export-qr-toggle')?.checked ?? true;
-    
-    const titleText = titleInput?.value || 'Climate Dashboard Export';
-    
-    if (actionBtn) {
-        actionBtn.disabled = true;
-        actionBtn.innerHTML = '<div class="export-studio-spinner"></div><span>Exporting...</span>';
-    }
-    
+    const format     = document.querySelector('input[name="export-format"]:checked')?.value || 'png';
+    const scale      = parseFloat(document.querySelector('input[name="export-quality"]:checked')?.value || '3.0');
+    const includeQR  = document.getElementById('export-qr-toggle')?.checked ?? true;
+    const titleText  = titleInput?.value || 'Climate Dashboard Export';
+
+    // Switch modal to progress view
+    showExportProgress();
+    _expCurrent = 0; _expTarget = 0;
+
     try {
         if (format === 'csv') {
+            setExportProgress(40, 'Compiling data…');
+            await yieldFrame();
             await runExportCSV(currentExportSource, titleText);
+            setExportProgress(100, 'Done!');
         } else if (format === 'svg') {
-            await runExportSVG(currentExportSource, titleText, includeQR);
+            await runExportSVG(currentExportSource, titleText, includeQR, setExportProgress, yieldFrame);
         } else {
-            await runExportPNG(currentExportSource, titleText, scale, includeQR);
+            await runExportPNG(currentExportSource, titleText, scale, includeQR, setExportProgress, yieldFrame);
         }
+        // Hold at 100% briefly then close
+        setExportProgress(100, 'Download starting…');
+        await new Promise(r => setTimeout(r, 700));
         closeExportStudio();
     } catch (err) {
         console.error('Export failed:', err);
-        alert('Oops! Export failed. Please try again.');
-    } finally {
-        if (actionBtn) {
-            actionBtn.disabled = false;
-            actionBtn.innerHTML = `<span>Download ${format.toUpperCase()}</span>`;
-        }
+        closeExportStudio();
+        alert('Export failed — please try again.');
     }
 }
+
 
 // CSV Export Logic
 async function runExportCSV(source, titleText) {
@@ -376,16 +425,22 @@ async function runExportCSV(source, titleText) {
 }
 
 // SVG Export Logic
-async function runExportSVG(source, titleText, includeQR) {
+async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
+    onProgress = onProgress || (() => {});
+    yieldFn    = yieldFn    || (() => Promise.resolve());
     const metric = window.selectedMetric?.() || 'mean_temp';
     const scenario = window.selectedScenario?.() || 'SSP585';
     const varCfg = variablesConfig[metric];
     const seasonLabel = tsSeasonLabels[tsSeason] || tsSeason.toUpperCase();
     const isTimeSeries = document.body.classList.contains('time-series-mode');
     
+    onProgress(5, 'Preparing export…');
+    await yieldFn();
     let svgContent = '';
     
     if (source === 'line-chart') {
+        onProgress(20, 'Building time-series chart…');
+        await yieldFn();
         if (!tsChart) return;
         const yMin = tsChart.scales.y.min;
         const yMax = tsChart.scales.y.max;
@@ -455,6 +510,8 @@ async function runExportSVG(source, titleText, includeQR) {
         });
         
     } else if (source === 'bar-chart') {
+        onProgress(20, 'Building bar chart…');
+        await yieldFn();
         if (!tsBarChart) return;
         const yMin = tsBarChart.scales.y.min;
         const yMax = tsBarChart.scales.y.max;
@@ -517,6 +574,8 @@ async function runExportSVG(source, titleText, includeQR) {
         svgContent += `    <text transform="rotate(-90)" x="-${(padding.top + plotHeight / 2).toFixed(1)}" y="${(padding.left - 50).toFixed(1)}" font-family="Arial" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">${varCfg.label} Change (${varCfg.unit})</text>\n`;
         
     } else if (source.startsWith('map-')) {
+        onProgress(8, 'Setting up projection…');
+        await yieldFn();
         const termKey = source.replace('map-', '');
         const termLabel = terms[termKey]?.label || '';
         const termYears = terms[termKey]?.years || '';
@@ -565,8 +624,12 @@ async function runExportSVG(source, titleText, includeQR) {
     <text x="${(svgWidth/2).toFixed(1)}" y="70" font-family="Arial" font-size="12" fill="#64748b" text-anchor="middle">${subtitleText}</text>
 `;
 
-        // --- GeoJSON polygons ---
-        datasetGeoJSON.features.forEach(feature => {
+        onProgress(18, 'Rendering regions…');
+        await yieldFn();
+        const totalFeatures = datasetGeoJSON.features.length;
+        const CHUNK = 60;
+        for (let i = 0; i < totalFeatures; i++) {
+            const feature    = datasetGeoJSON.features[i];
             const featureKey = levelsCfg[currentLevel].keyGen(feature.properties);
             const dataRow    = window.dataLookup[featureKey];
             let val = null;
@@ -578,8 +641,16 @@ async function runExportSVG(source, titleText, includeQR) {
             const fillColor = window.getColor(val, scenCfg);
             const d = geojsonToSvgPath(feature.geometry, projectFunc);
             svgContent += `    <path d="${d}" fill="${fillColor}" stroke="#1e293b" stroke-width="0.5" stroke-linejoin="round" />\n`;
-        });
+            // Yield every CHUNK features so progress bar repaints
+            if ((i + 1) % CHUNK === 0 || i === totalFeatures - 1) {
+                const pct = 18 + ((i + 1) / totalFeatures) * 60;
+                onProgress(pct, `Rendering regions… (${Math.round((i+1)/totalFeatures*100)}%)`);
+                await yieldFn();
+            }
+        }
 
+        onProgress(82, 'Drawing borders & ticks…');
+        await yieldFn();
         // --- Map border ---
         svgContent += `    <rect x="${offX.toFixed(1)}" y="${offY.toFixed(1)}" width="${finalW.toFixed(1)}" height="${finalH.toFixed(1)}" fill="none" stroke="#0f172a" stroke-width="1.5" />\n`;
 
@@ -640,6 +711,8 @@ async function runExportSVG(source, titleText, includeQR) {
         svgContent += `    <text x="${(barX+barW/2).toFixed(1)}" y="${(barY+barH+34).toFixed(1)}" font-family="Arial" font-size="11" font-weight="bold" text-anchor="middle" fill="#0f172a">${varCfg.label} Change (${varCfg.unit})</text>\n`;
     }
     
+    onProgress(96, 'Finalising file…');
+    await yieldFn();
     // Add common footer & QR code to SVG bottom
     const svgHeight = source.startsWith('map-') ? 980 : (source === 'bar-chart' ? 550 : 600);
     const svgWidth = 800;
@@ -685,7 +758,9 @@ function geojsonToSvgPath(geom, projectFunc) {
 }
 
 // PNG Export Logic
-async function runExportPNG(source, titleText, scale, includeQR) {
+async function runExportPNG(source, titleText, scale, includeQR, onProgress, yieldFn) {
+    onProgress = onProgress || (() => {});
+    yieldFn    = yieldFn    || (() => Promise.resolve());
     const metric = window.selectedMetric?.() || 'mean_temp';
     const scenario = window.selectedScenario?.() || 'SSP585';
     const varCfg = variablesConfig[metric];
@@ -704,6 +779,9 @@ async function runExportPNG(source, titleText, scale, includeQR) {
     canvas.height = height;
     const ctx = canvas.getContext('2d');
     
+    onProgress(5, 'Preparing canvas…');
+    await yieldFn();
+
     // Solid white background
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
@@ -731,18 +809,24 @@ async function runExportPNG(source, titleText, scale, includeQR) {
     
     // Draw Visualization
     if (source === 'line-chart') {
+        onProgress(20, 'Rendering time-series chart…');
+        await yieldFn();
         if (!tsChart) return;
         const chartDataUrl = getHighDPIChartImage(tsChart, scale, 690, 400);
         const chartImg = await loadImage(chartDataUrl);
         ctx.drawImage(chartImg, 55 * scale, 95 * scale, 690 * scale, 400 * scale);
         
     } else if (source === 'bar-chart') {
+        onProgress(20, 'Rendering bar chart…');
+        await yieldFn();
         if (!tsBarChart) return;
         const chartDataUrl = getHighDPIChartImage(tsBarChart, scale, 690, 350);
         const chartImg = await loadImage(chartDataUrl);
         ctx.drawImage(chartImg, 55 * scale, 95 * scale, 690 * scale, 350 * scale);
         
     } else if (source.startsWith('map-')) {
+        onProgress(8, 'Setting up projection…');
+        await yieldFn();
         const termKey = source.replace('map-', '');
 
         // --- Layout (matches SVG version) ---
@@ -781,7 +865,12 @@ async function runExportPNG(source, titleText, scale, includeQR) {
         const scenCfg = varCfg.scenarios[scenario];
 
         // --- Render features ---
-        datasetGeoJSON.features.forEach(feature => {
+        onProgress(18, 'Rendering regions…');
+        await yieldFn();
+        const totalFeatures = datasetGeoJSON.features.length;
+        const CHUNK = 60;
+        for (let i = 0; i < totalFeatures; i++) {
+            const feature    = datasetGeoJSON.features[i];
             const featureKey = levelsCfg[currentLevel].keyGen(feature.properties);
             const dataRow    = window.dataLookup[featureKey];
             let val = null;
@@ -799,8 +888,15 @@ async function runExportPNG(source, titleText, scale, includeQR) {
             } else if (geom.type === 'MultiPolygon') {
                 geom.coordinates.forEach(pc => drawCanvasPolygon(ctx, pc, getCanvasCoords));
             }
-        });
+            if ((i + 1) % CHUNK === 0 || i === totalFeatures - 1) {
+                const pct = 18 + ((i + 1) / totalFeatures) * 60;
+                onProgress(pct, `Rendering regions… (${Math.round((i+1)/totalFeatures*100)}%)`);
+                await yieldFn();
+            }
+        }
 
+        onProgress(82, 'Drawing borders & ticks…');
+        await yieldFn();
         // --- Border ---
         ctx.strokeStyle = '#0f172a';
         ctx.lineWidth   = 1.5 * scale;
@@ -902,6 +998,8 @@ async function runExportPNG(source, titleText, scale, includeQR) {
         ctx.fillText(`${varCfg.label} Change (${varCfg.unit})`, (barX + barW / 2) * scale, (barY + barH + 26) * scale);
     }
     
+    onProgress(96, 'Adding footer…');
+    await yieldFn();
     // Footer texts
     ctx.fillStyle = '#64748b';
     ctx.font = `${Math.round(10 * scale)}px Arial`;
