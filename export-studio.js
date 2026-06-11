@@ -1,10 +1,10 @@
 const EXPORT_QR_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIwAAACMAQAAAACGu3yTAAABQklEQVR4nKWWwW3lMBQDR0Huow7cf1nugK8C5vAXC2w2AT4s3UzgETQ9krXKtzUf3xV4U5q1FuwZ1tqz1np38H/pkzLMuNJ9U+a51wezGDq4uJj1/uAv0h4dHwz+INUZ73MvC3uurmtu7IHXyob8fdyQ57ls/yC2L2z7PBcJ1FANgR7k4qLDdgbAE74oAoJNmvg8F4lqDCnm5B0pAZM0RDzJ1SKhpkpzwARpkxCahnDWV4Vq68vyyCutaFIxz70+ZQNEltzXHOxHGgliYssZX8YW07w2+RET4fU1a8UjJmibShPTHHRPCrEWk55xn0aTpiCesvpiDAP0oK9VYHBlE5y3B3/uHtoWE5IcnattZg0OInsf/rcB7u6VtT26AwDkWteql0lOvYjjcN/XeNJ9mwZM7eF5HyCqNi+7M77+Wc/vhV+4agCvYD249AAAAABJRU5ErkJggg==";
 
 const MAP_BOUNDS = {
-    minLng: 68.0,
-    maxLng: 97.5,
-    minLat: 6.0,
-    maxLat: 37.5
+    minLng: 65.0,
+    maxLng: 100.0,
+    minLat: 5.0,
+    maxLat: 40.0
 };
 
 // Equirectangular projection helper (direct lat/lng scale — fills canvas correctly)
