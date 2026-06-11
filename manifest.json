@@ -1,0 +1,25 @@
+{
+  "name": "IITM-ESM Climate Viewer",
+  "short_name": "ESM Viewer",
+  "description": "Visualizing bias-corrected climate projections over Indian districts using IITM Earth System Model.",
+  "start_url": "./index.html",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
