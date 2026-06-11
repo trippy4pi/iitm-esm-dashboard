@@ -1327,24 +1327,30 @@ async function updateTimeSeriesChart() {
                     ctx.restore();
                 }
             }
-        }, {
-            id: 'axisHover',
-            beforeEvent: (chart, args) => {
-                const e = args.event;
-                if (e.type === 'mousemove' || e.type === 'touchstart' || e.type === 'touchmove') {
-                    const { chartArea } = chart;
-                    if (chartArea && e.x >= chartArea.left && e.x <= chartArea.right) {
-                        if (e.y > chartArea.bottom) {
-                            e.y = chartArea.bottom - 1; // Fake the Y coordinate so tooltip triggers on X-axis
-                        }
-                        if (e.y < chartArea.top) {
-                            e.y = chartArea.top + 1; // Fake Y if hovering above
-                        }
-                    }
-                }
-            }
         }]
     });
+
+    if (!canvas._axisHoverAttached) {
+        canvas.addEventListener('mousemove', (e) => {
+            if (!tsChart || !tsChart.chartArea) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const { chartArea } = tsChart;
+            
+            // If hovering over the X-axis labels (below the plot area)
+            if (x >= chartArea.left && x <= chartArea.right && y > chartArea.bottom) {
+                const fakeEvent = { x: x, y: chartArea.bottom - 1 };
+                const elements = tsChart.getElementsAtEventForMode(fakeEvent, 'index', { intersect: false }, true);
+                if (elements && elements.length > 0) {
+                    tsChart.setActiveElements(elements);
+                    tsChart.tooltip.setActiveElements(elements, fakeEvent);
+                    tsChart.update();
+                }
+            }
+        });
+        canvas._axisHoverAttached = true;
+    }
 
     // Hide tooltip when mouse leaves the chart canvas
     canvas.addEventListener('mouseleave', () => {
@@ -1618,27 +1624,31 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
                             color: '#000000',
                             padding: isMobile ? 4 : 15
                         }
-                    }
                 }
-            },
-            plugins: [{
-                id: 'axisHover',
-                beforeEvent: (chart, args) => {
-                    const e = args.event;
-                    if (e.type === 'mousemove' || e.type === 'touchstart' || e.type === 'touchmove') {
-                        const { chartArea } = chart;
-                        if (chartArea && e.x >= chartArea.left && e.x <= chartArea.right) {
-                            if (e.y > chartArea.bottom) {
-                                e.y = chartArea.bottom - 1; // Fake the Y coordinate so tooltip triggers on X-axis
-                            }
-                            if (e.y < chartArea.top) {
-                                e.y = chartArea.top + 1; // Fake Y if hovering above
-                            }
-                        }
-                    }
-                }
-            }]
+            }
         });
+
+        if (!canvas._axisHoverAttached) {
+            canvas.addEventListener('mousemove', (e) => {
+                if (!tsBarChart || !tsBarChart.chartArea) return;
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const { chartArea } = tsBarChart;
+                
+                // If hovering over the X-axis labels (below the plot area)
+                if (x >= chartArea.left && x <= chartArea.right && y > chartArea.bottom) {
+                    const fakeEvent = { x: x, y: chartArea.bottom - 1 };
+                    const elements = tsBarChart.getElementsAtEventForMode(fakeEvent, 'index', { intersect: false }, true);
+                    if (elements && elements.length > 0) {
+                        tsBarChart.setActiveElements(elements);
+                        tsBarChart.tooltip.setActiveElements(elements, fakeEvent);
+                        tsBarChart.update();
+                    }
+                }
+            });
+            canvas._axisHoverAttached = true;
+        }
     }
 }
 
