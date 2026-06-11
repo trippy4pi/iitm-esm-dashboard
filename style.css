@@ -2324,23 +2324,44 @@ footer {
     body.time-series-mode .maps-row {
         display: flex !important;
         flex-direction: column !important;
-        overflow-y: auto !important;
-        overflow-x: hidden !important;
-        scroll-snap-type: none !important;
-        padding: 1rem 1.2rem !important;
+        overflow: hidden !important;
+        padding: 8px 12px !important;
         height: 100% !important;
+        box-sizing: border-box !important;
     }
 
     body.time-series-mode #mid-term {
-        flex: none !important;
+        flex: 1 !important;
         width: 100% !important;
         aspect-ratio: auto !important;
-        min-height: auto !important;
-        border: none !important;
-        border-radius: 0 !important;
-        background: transparent !important;
-        box-shadow: none !important;
-        overflow: visible !important;
+        min-height: 0 !important;
+        border: 2px solid #000000 !important;
+        border-radius: 16px !important;
+        background: #ffffff !important;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12) !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    body.time-series-mode #mid-term-header {
+        height: auto !important;
+        min-height: 56px !important;
+        flex-direction: column !important;
+        padding: 10px 1rem !important;
+        gap: 8px !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-bottom: 2px solid #000000 !important;
+        white-space: normal !important;
+    }
+
+    body.time-series-mode .ts-control-group {
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        text-align: center !important;
+        gap: 6px 8px !important;
+        line-height: 1.4 !important;
     }
 
     body.time-series-mode #mid-term .big-rect-placeholder {
@@ -2349,43 +2370,49 @@ footer {
         top: auto !important;
         display: flex !important;
         flex-direction: column !important;
-        gap: 20px !important;
+        gap: 0 !important;
         background: transparent !important;
         z-index: 1;
         animation: none !important;
+        flex: 1 !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
     }
 
     /* Stack Line & Bar charts vertically in Time Series mode */
-    .ts-window {
-        background: #ffffff;
-        border: 2.2px solid #000000;
-        border-radius: 16px;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-        overflow: hidden;
+    body.time-series-mode .ts-window {
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        overflow: hidden !important;
         width: 100%;
-        display: flex;
-        flex-direction: column;
+        display: flex !important;
+        flex-direction: column !important;
+        min-height: 0 !important;
     }
 
-    .ts-window-line {
-        height: 340px !important;
-        border-bottom: 2.2px solid #000000 !important;
+    body.time-series-mode .ts-window-line {
+        flex: 1 !important;
+        height: auto !important;
+        border-bottom: 2px solid #000000 !important;
     }
 
-    .ts-window-bar {
-        height: 420px !important;
+    body.time-series-mode .ts-window-bar {
+        flex: 1.1 !important;
+        height: auto !important;
     }
 
-    .ts-window canvas {
-        padding: 8px 1rem 1.2rem 1.4rem !important;
+    body.time-series-mode .ts-window canvas {
+        padding: 24px 1rem 1.2rem 3rem !important;
     }
 
     #bar-graph-header {
         height: auto !important;
         min-height: 56px !important;
         flex-direction: column !important;
-        padding: 12px 1rem !important;
-        gap: 10px !important;
+        padding: 10px 1rem 14px 1rem !important;
+        gap: 8px !important;
         align-items: center !important;
         justify-content: center !important;
         border-bottom: 2px solid #000000 !important;

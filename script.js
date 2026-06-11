@@ -1127,28 +1127,8 @@ async function updateTimeSeriesChart() {
             responsive: true,
             maintainAspectRatio: false,
             animation: {
-                x: {
-                    type: 'number',
-                    easing: 'linear',
-                    duration: 15, // Delay per point
-                    from: NaN,
-                    delay(ctx) {
-                        if (ctx.type !== 'data' || ctx.xStarted) return 0;
-                        ctx.xStarted = true;
-                        return ctx.index * 15;
-                    }
-                },
-                y: {
-                    type: 'number',
-                    easing: 'linear',
-                    duration: 15,
-                    from: (ctx) => ctx.index === 0 ? ctx.chart.scales.y.getPixelForValue(0) : ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.index - 1].getProps(['y'], true).y,
-                    delay(ctx) {
-                        if (ctx.type !== 'data' || ctx.yStarted) return 0;
-                        ctx.yStarted = true;
-                        return ctx.index * 15;
-                    }
-                }
+                duration: 800,
+                easing: 'easeOutQuart'
             },
             interaction: {
                 intersect: false,
@@ -1199,7 +1179,7 @@ async function updateTimeSeriesChart() {
                 }
             },
             layout: {
-                padding: { top: 0, bottom: 0, left: 0, right: 0 }
+                padding: { top: 0, bottom: 0, left: window.innerWidth <= 1024 ? 12 : 5, right: 0 }
             },
             plugins: {
                 legend: {
@@ -1427,7 +1407,10 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
         tsBarChart.data.datasets[0].data = data;
         tsBarChart.data.datasets[0].backgroundColor = barGrad;
 
-        tsBarChart.options.scales.x.ticks.font.size = useFullNames ? 14 : 12;
+        const isMobile = window.innerWidth <= 1024;
+        tsBarChart.options.scales.x.ticks.font.size = isMobile ? 8 : (useFullNames ? 14 : 12);
+        tsBarChart.options.scales.x.ticks.maxRotation = isMobile ? 90 : 45;
+        tsBarChart.options.scales.x.ticks.minRotation = isMobile ? 90 : 0;
         tsBarChart.options.scales.y.suggestedMin = barYMin !== null ? Math.min(0, barYMin) : 0;
         tsBarChart.options.scales.y.suggestedMax = barYMax !== null ? barYMax : undefined;
         tsBarChart.options.scales.y.title.text = `${varCfg.label} (${varCfg.unit})`;
@@ -1462,7 +1445,8 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
                 },
                 layout: {
                     padding: {
-                        bottom: 15
+                        bottom: 15,
+                        left: window.innerWidth <= 1024 ? 12 : 5
                     }
                 },
                 onHover: (evt, elements, chart) => {
@@ -1532,9 +1516,11 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
                 scales: {
                     x: {
                         ticks: {
-                            font: { size: useFullNames ? 14 : 12, weight: '900' },
+                            font: { size: window.innerWidth <= 1024 ? 8 : (useFullNames ? 14 : 12), weight: '900' },
                             color: '#000000',
-                            padding: 6
+                            padding: 6,
+                            maxRotation: window.innerWidth <= 1024 ? 90 : 45,
+                            minRotation: window.innerWidth <= 1024 ? 90 : 0
                         },
                         grid: { display: false },
                         border: { display: false }
@@ -1794,6 +1780,8 @@ function populateSearch() {
                             syncHover(lockedFeatureKey, null, true, layer.getBounds().getCenter());
                         }
                     }
+                    if (tsChart) tsChart.resize();
+                    if (tsBarChart) tsBarChart.resize();
                 }, 800);
             } else {
                 // Exiting Time Series: Sequence the layout first
@@ -2260,6 +2248,8 @@ checkCMIP7Availability();
             if (isMobile) {
                 updateCarouselArrows();
             }
+            if (typeof tsChart !== 'undefined' && tsChart) tsChart.resize();
+            if (typeof tsBarChart !== 'undefined' && tsBarChart) tsBarChart.resize();
         }, 300);
     }
 
