@@ -1911,12 +1911,39 @@ footer {
     }
 
     /* 4. Collapsible Controls Accordion Panel */
+    .mobile-controls-row {
+        display: flex;
+        width: calc(100vw - 16px) !important;
+        margin: 12px auto 8px !important;
+        gap: 8px;
+        align-items: stretch;
+    }
+
+    .mobile-controls-row .search-box {
+        display: flex !important;
+        width: 50% !important;
+        flex: 1;
+        height: auto !important;
+        min-height: 44px;
+        margin: 0 !important;
+        border-radius: 16px !important;
+        background: rgba(255, 255, 255, 0.95);
+        border: 1.5px solid rgba(0,0,0,0.2) !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+    }
+
+    .mobile-controls-row .search-box:focus-within {
+        width: 50% !important;
+        border-color: #38bdf8 !important;
+    }
+
     .mobile-filter-accordion {
         display: block;
         position: relative; /* Sit in normal document flow */
-        width: calc(100vw - 16px) !important;
+        width: 50% !important;
+        flex: 1;
         max-width: none !important;
-        margin: 12px auto 8px !important;
+        margin: 0 !important;
         background: rgba(12, 74, 110, 0.88) !important;
         backdrop-filter: blur(12px) !important;
         -webkit-backdrop-filter: blur(12px) !important;
@@ -2004,35 +2031,13 @@ footer {
         display: flex !important;
         justify-content: center;
         width: 100%;
-        margin-bottom: 4px;
-        grid-column: span 2 !important;
+        margin-bottom: 0 !important;
+        grid-column: 2 !important;
         grid-row: 1 !important;
     }
 
     .filter-accordion-content .view-label {
         color: #ffffff !important;
-    }
-
-    /* Accordion Controls Alignment & Desktop Looks Match */
-    .filter-accordion-content .search-box {
-        grid-column: 2 !important;
-        grid-row: 2 !important;
-        width: 100% !important;
-        max-width: none !important;
-        min-width: 0 !important;
-        margin-bottom: 0;
-        height: 36px;
-        background: #ffffff;
-        border: 1.5px solid #000000;
-        border-radius: 50px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        display: flex;
-    }
-
-    .filter-accordion-content .search-box:focus-within {
-        width: 100% !important;
-        max-width: none !important;
-        border-color: #38bdf8;
     }
 
     .filter-accordion-content .header-controls {
@@ -2041,7 +2046,7 @@ footer {
 
     .filter-accordion-content .variable-selector {
         grid-column: 1 !important;
-        grid-row: 2 !important;
+        grid-row: 1 !important;
         width: 100%;
         display: flex;
         justify-content: center;
@@ -2151,7 +2156,7 @@ footer {
     /* Keep the horizontal sliding radios look exactly as desktop */
     .filter-accordion-content .scenario-radios {
         grid-column: span 2 !important;
-        grid-row: 3 !important;
+        grid-row: 2 !important;
         width: 100% !important;
         max-width: none !important;
         height: 36px !important;

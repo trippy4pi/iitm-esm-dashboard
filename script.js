@@ -2294,8 +2294,9 @@ checkCMIP7Availability();
             wasMobile = isMobile;
             if (isMobile) {
                 if (accordionContent) {
+                    const mobileRow = document.getElementById('mobile-controls-row');
+                    if (mobileRow) mobileRow.appendChild(searchContainer);
                     accordionContent.appendChild(viewToggleArea);
-                    accordionContent.appendChild(searchContainer);
                     accordionContent.appendChild(controlsPanel);
                 }
             } else {
