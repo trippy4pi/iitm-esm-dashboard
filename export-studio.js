@@ -386,11 +386,12 @@ async function runExportCSV(source, titleText) {
         tsChart.data.datasets.forEach(ds => headers.push(ds.label));
         csvContent += headers.join(',') + '\n';
         
-        tsChart.data.labels.forEach((year, idx) => {
+        tsChart.data.labels.forEach(year => {
             const row = [year];
             tsChart.data.datasets.forEach(ds => {
-                const val = ds.data[idx];
-                row.push(val !== undefined && val !== null ? val.toFixed(2) : '');
+                const point = ds.data.find(d => d.x === year);
+                const numVal = point ? point.y : null;
+                row.push(numVal !== undefined && numVal !== null ? numVal.toFixed(2) : '');
             });
             csvContent += row.join(',') + '\n';
         });
@@ -512,10 +513,9 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
         // Draw lines
         tsChart.data.datasets.forEach(ds => {
             let points = [];
-            ds.data.forEach((val, idx) => {
-                if (val !== null && val !== undefined) {
-                    const yr = years[idx];
-                    points.push(`${getSvgX(yr).toFixed(1)},${getSvgY(val).toFixed(1)}`);
+            ds.data.forEach(pt => {
+                if (pt && pt.y !== null && pt.y !== undefined) {
+                    points.push(`${getSvgX(pt.x).toFixed(1)},${getSvgY(pt.y).toFixed(1)}`);
                 }
             });
             if (points.length > 0) {
@@ -552,7 +552,7 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
         
         const svgWidth = 800;
         const svgHeight = 550;
-        const padding = { top: 110, right: 40, bottom: 95, left: 70 };
+        const padding = { top: 110, right: 110, bottom: 95, left: 70 };
         const plotWidth = svgWidth - padding.left - padding.right;
         const plotHeight = svgHeight - padding.top - padding.bottom;
         
@@ -896,9 +896,9 @@ async function runExportPNG(source, titleText, scale, includeQR, onProgress, yie
         onProgress(95, 'Drawing chart geometries and preparing final rendering…');
         await sleep(800);
         if (!tsBarChart) return;
-        const chartDataUrl = getHighDPIChartImage(tsBarChart, scale, 690, 350);
+        const chartDataUrl = getHighDPIChartImage(tsBarChart, scale, 620, 350);
         const chartImg = await loadImage(chartDataUrl);
-        ctx.drawImage(chartImg, 55 * scale, 95 * scale, 690 * scale, 350 * scale);
+        ctx.drawImage(chartImg, 55 * scale, 95 * scale, 620 * scale, 350 * scale);
         
     } else if (source.startsWith('map-')) {
         onProgress(5, 'Loading district boundaries from GeoJSON data…');
