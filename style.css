@@ -2246,11 +2246,11 @@ footer {
     }
 
     .carousel-nav-btn.prev-btn {
-        left: 10px;
+        left: 4px;
     }
 
     .carousel-nav-btn.next-btn {
-        right: 10px;
+        right: 4px;
     }
 
     /* Hide nav arrows in Time Series mode since maps are hidden */
@@ -2267,7 +2267,7 @@ footer {
         scroll-snap-type: x mandatory !important;
         -webkit-overflow-scrolling: touch;
         gap: 16px !important;
-        padding: 10px 12px 20px !important;
+        padding: 10px 8px 20px !important;
         margin: 0 !important;
         width: 100% !important;
         scroll-behavior: smooth;
@@ -2280,8 +2280,8 @@ footer {
     }
 
     .map-container {
-        flex: 0 0 calc(100vw - 24px) !important;
-        width: calc(100vw - 24px) !important;
+        flex: 0 0 calc(100vw - 16px) !important;
+        width: calc(100vw - 16px) !important;
         min-width: 0 !important;
         scroll-snap-align: center;
         margin: 0 auto !important;
@@ -2396,7 +2396,7 @@ footer {
         width: 100% !important;
         bottom: auto !important;
         left: auto !important;
-        padding: 8px 0.5px !important;
+        padding: 8px 4px !important;
     }
     .legend-title {
         padding: 0 12px !important;

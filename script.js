@@ -2321,7 +2321,7 @@ checkCMIP7Availability();
             if (targetEl) {
                 programmaticScrolling = true;
                 mapsRow.scrollTo({
-                    left: targetEl.offsetLeft - mapsRow.offsetLeft - 12,
+                    left: targetEl.offsetLeft - mapsRow.offsetLeft - 8,
                     behavior: 'smooth'
                 });
                 updateCarouselArrowsForIndex(prevIndex);
@@ -2338,7 +2338,7 @@ checkCMIP7Availability();
             if (targetEl) {
                 programmaticScrolling = true;
                 mapsRow.scrollTo({
-                    left: targetEl.offsetLeft - mapsRow.offsetLeft - 12,
+                    left: targetEl.offsetLeft - mapsRow.offsetLeft - 8,
                     behavior: 'smooth'
                 });
                 updateCarouselArrowsForIndex(nextIndex);
