@@ -2098,20 +2098,7 @@ function downloadMapPNG(term) {
 function updateMetricDropdownButtonText(proj, val, fullLabelText) {
     const dropdownBtn = document.getElementById('metric-dropdown-btn');
     if (!dropdownBtn) return;
-    
-    const isMobile = window.innerWidth <= 767;
-    if (isMobile) {
-        const shortNames = {
-            'mean_temp': 'tas',
-            'max_temp': 'tasmax',
-            'min_temp': 'tasmin',
-            'precipitation': 'pr'
-        };
-        const shortName = shortNames[val] || val;
-        dropdownBtn.querySelector('span').innerText = `${proj.toUpperCase()}-${shortName}`;
-    } else {
-        dropdownBtn.querySelector('span').innerText = `${proj.toUpperCase()} - ${fullLabelText}`;
-    }
+    dropdownBtn.querySelector('span').innerText = `${proj.toUpperCase()} - ${fullLabelText}`;
 }
 
 // Custom Dropdown JS Logic
