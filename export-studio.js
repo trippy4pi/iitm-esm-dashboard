@@ -365,6 +365,16 @@ async function triggerExportStudioAction() {
         } else {
             await runExportPNG(currentExportSource, titleText, scale, includeQR, setExportProgress, yieldFrame);
         }
+        // Log the download
+        fetch('log_download.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                type: currentExportSource.startsWith('map-') ? 'Map' : 'Chart',
+                format: format.toUpperCase()
+            })
+        }).catch(e => console.error('Logging failed:', e));
+
         // Hold at 100% briefly then close
         setExportProgress(100, 'Download starting…');
         await sleep(1200);
