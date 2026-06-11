@@ -146,6 +146,10 @@ window.openExportStudio = function(source) {
         defaultTitle = `${varCfg.label} Time Series for ${displayStateName} (${tsStartYear}-${tsEndYear})`;
     } else if (source === 'bar-chart') {
         defaultTitle = `${varCfg.label} Comparison by State/UT under ${scenario} (${seasonLabel})`;
+    } else if (source.startsWith('map-')) {
+        const termKey = source.replace('map-', '');
+        const termLabel = terms[termKey]?.label || '';
+        const termYears = terms[termKey]?.years || '';
         const cleanLabel = varCfg.label.toLowerCase().endsWith('change') ? varCfg.label : `${varCfg.label} Change`;
         defaultTitle = `${cleanLabel} under ${scenario} (${seasonLabel}) - ${termLabel} ${termYears}`;
     }
