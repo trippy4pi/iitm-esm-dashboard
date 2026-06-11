@@ -1327,6 +1327,22 @@ async function updateTimeSeriesChart() {
                     ctx.restore();
                 }
             }
+        }, {
+            id: 'axisHover',
+            beforeEvent: (chart, args) => {
+                const e = args.event;
+                if (e.type === 'mousemove' || e.type === 'touchstart' || e.type === 'touchmove') {
+                    const { chartArea } = chart;
+                    if (chartArea && e.x >= chartArea.left && e.x <= chartArea.right) {
+                        if (e.y > chartArea.bottom) {
+                            e.y = chartArea.bottom - 1; // Fake the Y coordinate so tooltip triggers on X-axis
+                        }
+                        if (e.y < chartArea.top) {
+                            e.y = chartArea.top + 1; // Fake Y if hovering above
+                        }
+                    }
+                }
+            }
         }]
     });
 
@@ -1604,7 +1620,24 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
                         }
                     }
                 }
-            }
+            },
+            plugins: [{
+                id: 'axisHover',
+                beforeEvent: (chart, args) => {
+                    const e = args.event;
+                    if (e.type === 'mousemove' || e.type === 'touchstart' || e.type === 'touchmove') {
+                        const { chartArea } = chart;
+                        if (chartArea && e.x >= chartArea.left && e.x <= chartArea.right) {
+                            if (e.y > chartArea.bottom) {
+                                e.y = chartArea.bottom - 1; // Fake the Y coordinate so tooltip triggers on X-axis
+                            }
+                            if (e.y < chartArea.top) {
+                                e.y = chartArea.top + 1; // Fake Y if hovering above
+                            }
+                        }
+                    }
+                }
+            }]
         });
     }
 }
