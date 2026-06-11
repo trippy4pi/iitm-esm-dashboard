@@ -1838,9 +1838,17 @@ footer {
         justify-content: center !important;
     }
 
+    .logo a {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 100% !important;
+        height: 100% !important;
+    }
+
     #main-logo {
-        width: 26px !important;
-        height: 26px !important;
+        width: 34px !important;
+        height: 34px !important;
         object-fit: contain !important;
     }
 
