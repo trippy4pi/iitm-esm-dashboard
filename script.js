@@ -10,8 +10,8 @@ let lockedFeatureKey = null;
 let tsData = null;
 let tsChart = null;
 let tsSeason = 'annual';
-let tsStartYear = 2015;
-let tsEndYear = 2099;
+let tsStartYear = 2010;
+let tsEndYear = 2100;
 let tsSelectedVar = 'precipitation';
 let tsFullData = null; // Cache for time_series_data.json
 let tsTriggeredByMap = false; // To show red line only on click
@@ -21,6 +21,14 @@ let tsBarChart = null;
 let tsBarDataItems = []; // For bi-directional sync
 let tsBarSort = 'az'; // Default Alphabetical A-Z
 let tsVisibleStates = new Set(); // For filtering bars
+
+function getSentenceCaseYTitle(varCfg) {
+    if (!varCfg) return '';
+    const label = varCfg.label;
+    const words = label.split(' ');
+    const sentenceCase = words.map((w, i) => i === 0 ? w : w.toLowerCase()).join(' ');
+    return `${sentenceCase} (${varCfg.unit})`;
+}
 
 // Data cache to avoid redundant fetches
 const _dataCache = {};
@@ -975,14 +983,17 @@ async function updateTimeSeriesChart() {
 
     // 2. Initial/Update Header with Controls
     const effectiveTitleLoc = (stateKey && tsTriggeredByMap) ? displayStateName : "INDIA";
+    const titleLabel = isMobile ? `${varCfg.json_key.toUpperCase()} CHANGE` : varCfg.label;
     if (!header.querySelector('.ts-control-group') || tsSelectedVar !== metric) {
         tsSelectedVar = metric;
-        renderTimeSeriesHeader(header, effectiveTitleLoc, varCfg.label, scenario);
+        renderTimeSeriesHeader(header, effectiveTitleLoc, titleLabel, scenario);
     } else {
         const titleScen = header.querySelector('#ts-title-scenario');
         if (titleScen) titleScen.innerText = `(${scenario})`;
         const titleState = header.querySelector('#ts-title-state');
         if (titleState) titleState.innerText = effectiveTitleLoc;
+        const titleVar = header.querySelector('#ts-title-varlabel');
+        if (titleVar) titleVar.innerText = titleLabel;
     }
 
     // 3. Load Unified Data if needed
@@ -1175,7 +1186,7 @@ async function updateTimeSeriesChart() {
                     suggestedMax: yMax !== null ? yMax : undefined,
                     title: {
                         display: true,
-                        text: isMobile ? `${varCfg.json_key.toUpperCase()} CHANGE (${varCfg.unit})` : `${varCfg.label} (${varCfg.unit})`,
+                        text: isMobile ? getSentenceCaseYTitle(varCfg) : `${varCfg.label} (${varCfg.unit})`,
                         color: '#000000',
                         font: { weight: '850', size: isMobile ? 9 : 16 },
                         padding: isMobile ? 2 : 15
@@ -1314,6 +1325,7 @@ async function updateTimeSeriesChart() {
 }
 
 function updateTimeSeriesBarChart(varCfg, scenario) {
+    const isMobile = window.innerWidth <= 1024;
     const canvas = document.getElementById('time-series-bar-chart');
     if (!canvas) return;
 
@@ -1321,7 +1333,8 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
     const barTitleEl = document.querySelector('#bar-graph-header span');
     if (barTitleEl) {
         const seasonLabel = tsSeasonLabels[tsSeason] || tsSeason.toUpperCase();
-        barTitleEl.innerHTML = `State-Wise Comparison of <span style="font-weight:850; margin:0 4px;">${seasonLabel} ${varCfg.label}</span> <span style="font-weight:750; margin-right:4px;">(${scenario})</span> Averaged Between <span style="font-weight:850; margin-left:4px;">${tsStartYear} to ${tsEndYear}</span>`;
+        const titleLabel = isMobile ? `${varCfg.json_key.toUpperCase()} CHANGE` : varCfg.label;
+        barTitleEl.innerHTML = `State-Wise Comparison of <span style="font-weight:850; margin:0 4px;">${seasonLabel} ${titleLabel}</span> <span style="font-weight:750; margin-right:4px;">(${scenario})</span> Averaged Between <span style="font-weight:850; margin-left:4px;">${tsStartYear} to ${tsEndYear}</span>`;
         barTitleEl.style.color = '#000000';
     }
 
@@ -1333,7 +1346,6 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
             return { stateName, acronym, val };
         })
         .filter(item => item.val !== null);
-    const isMobile = window.innerWidth <= 1024;
 
     // Filter by selection
     items = items.filter(item => tsVisibleStates.size === 0 || tsVisibleStates.has(item.stateName));
@@ -1418,7 +1430,7 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
         tsBarChart.options.scales.y.suggestedMin = barYMin !== null ? Math.min(0, barYMin) : 0;
         tsBarChart.options.scales.y.suggestedMax = barYMax !== null ? barYMax : undefined;
         tsBarChart.options.scales.y.title.display = true;
-        tsBarChart.options.scales.y.title.text = isMobile ? `${varCfg.json_key.toUpperCase()} CHANGE (${varCfg.unit})` : `${varCfg.label} (${varCfg.unit})`;
+        tsBarChart.options.scales.y.title.text = isMobile ? getSentenceCaseYTitle(varCfg) : `${varCfg.label} (${varCfg.unit})`;
         tsBarChart.options.scales.y.title.font = { size: isMobile ? 9 : 16, weight: '900' };
         tsBarChart.options.scales.y.title.padding = isMobile ? 2 : 15;
         tsBarChart.options.scales.y.ticks.font = { size: isMobile ? 9 : 12, weight: '750' };
@@ -1561,7 +1573,7 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
                         },
                         title: {
                             display: true,
-                            text: isMobile ? `${varCfg.json_key.toUpperCase()} CHANGE (${varCfg.unit})` : `${varCfg.label} (${varCfg.unit})`,
+                            text: isMobile ? getSentenceCaseYTitle(varCfg) : `${varCfg.label} (${varCfg.unit})`,
                             font: { size: isMobile ? 9 : 16, weight: '900' },
                             color: '#000000',
                             padding: isMobile ? 2 : 15
@@ -1574,7 +1586,14 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
 }
 
 function renderTimeSeriesHeader(container, stateName, varLabel, scenario) {
-    const seasons = [
+    const isMobile = window.innerWidth <= 1024;
+    const seasons = isMobile ? [
+        { id: 'annual', label: 'ANNUAL' },
+        { id: 'mam', label: 'MAM' },
+        { id: 'jjas', label: 'JJAS' },
+        { id: 'son', label: 'SON' },
+        { id: 'djf', label: 'DJF' }
+    ] : [
         { id: 'annual', label: 'ANNUAL' },
         { id: 'mam', label: 'MAM (Mar-May)' },
         { id: 'jjas', label: 'JJAS (Jun-Sep)' },
@@ -1584,14 +1603,17 @@ function renderTimeSeriesHeader(container, stateName, varLabel, scenario) {
 
     container.innerHTML = `
         <div class="ts-control-group" style="color:#000000;">
-            Time Series of <span id="ts-title-state" style="font-weight:850; margin:0 4px; color:#000000;">${stateName}</span> for 
-            <select class="ts-select" id="ts-season-select" style="margin-right:8px;">
-                ${seasons.map(s => `<option value="${s.id}" ${tsSeason === s.id ? 'selected' : ''}>${s.label}</option>`).join('')}
-            </select>
-            <span style="margin-right:8px; color:#000000;">${varLabel}</span>
-            <span id="ts-title-scenario" style="font-weight:750; margin-right:4px; color:#000000;">(${scenario})</span> 
-            
-            <div style="display:inline-flex; align-items:center; gap:6px; margin-left:8px;">
+            <div class="ts-header-row">
+                Time Series of <span id="ts-title-state" style="font-weight:850; margin:0 4px; color:#000000;">${stateName}</span> for 
+                <select class="ts-select" id="ts-season-select" style="margin-right:8px;">
+                    ${seasons.map(s => `<option value="${s.id}" ${tsSeason === s.id ? 'selected' : ''}>${s.label}</option>`).join('')}
+                </select>
+            </div>
+            <div class="ts-header-row">
+                <span id="ts-title-varlabel" style="margin-right:8px; color:#000000; font-weight:850;">${varLabel}</span>
+                <span id="ts-title-scenario" style="font-weight:750; margin-right:4px; color:#000000;">(${scenario})</span> 
+            </div>
+            <div class="ts-header-row" style="display:inline-flex; align-items:center; gap:6px; margin-left:8px;">
                 <div class="year-picker-container">
                     <button class="year-picker-btn" id="start-year-trigger">${tsStartYear}</button>
                     <div class="year-picker-popup" id="start-picker-popup">
@@ -1607,10 +1629,10 @@ function renderTimeSeriesHeader(container, stateName, varLabel, scenario) {
                         <div class="year-grid" id="end-year-grid"></div>
                     </div>
                 </div>
+                <button id="download-line-chart" class="chart-download-btn" title="Download Line Chart as PNG" style="margin-left:12px;">
+                    <img src="assets/icons/lucide-download.svg" alt="Download">
+                </button>
             </div>
-            <button id="download-line-chart" class="chart-download-btn" title="Download Line Chart as PNG" style="margin-left:12px;">
-                <img src="assets/icons/lucide-download.svg" alt="Download">
-            </button>
         </div>
     `;
 
@@ -1622,7 +1644,7 @@ function renderTimeSeriesHeader(container, stateName, varLabel, scenario) {
 
         const render = () => {
             grid.innerHTML = '';
-            for (let y = 2015; y <= 2099; y++) {
+            for (let y = 2010; y <= 2100; y++) {
                 const cell = document.createElement('button');
                 cell.className = 'year-cell';
                 cell.innerText = y;

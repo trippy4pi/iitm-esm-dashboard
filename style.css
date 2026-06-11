@@ -1021,6 +1021,10 @@ body:not(.time-series-mode) .big-rect-placeholder {
     width: 100%;
 }
 
+.ts-header-row {
+    display: contents;
+}
+
 .ts-select {
     appearance: none;
     background: #ffffff;
@@ -2362,6 +2366,24 @@ footer {
         text-align: center !important;
         gap: 6px 8px !important;
         line-height: 1.4 !important;
+    }
+
+    body.time-series-mode .ts-header-row {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 100% !important;
+        gap: 6px !important;
+        margin: 2px 0 !important;
+    }
+
+    body.time-series-mode .ts-select {
+        max-width: 85px !important;
+        padding: 2px 14px 2px 6px !important;
+        background-position: right 4px center !important;
+        font-size: 0.7rem !important;
+        text-overflow: ellipsis !important;
+        overflow: hidden !important;
     }
 
     body.time-series-mode #mid-term .big-rect-placeholder {
