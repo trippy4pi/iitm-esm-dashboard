@@ -1,16 +1,55 @@
-# IITM-ESM Climate Dashboard
+# IITM ESM Climate Projections Dashboard
 
-A high-performance web dashboard for visualizing IITM-ESM climate projections over India (states and districts).
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Status](https://img.shields.io/badge/status-Production_Ready-success.svg)
 
-## Local Development
-To run the dashboard locally:
-```bash
-# Serve the project root directory
-python3 -m http.server 8000
-```
-Then open `http://localhost:8000` in your web browser.
+## Overview
+The **IITM ESM Dashboard** is an interactive, high-performance WebGIS application designed to visualize high-resolution climate projections across India. It provides researchers, policymakers, and the general public with intuitive, dynamic tools to explore projected climate changes across various scenarios (SSPs) and timeframes, seamlessly comparing CMIP6 and CMIP7 data.
 
-## Tech Stack
-* Core: HTML5, CSS3, JavaScript (ES6+)
-* Libraries: Leaflet.js (mapping), Chart.js (analytics)
-* Features: Offline support via Service Worker, PWA installation, Export Studio (PNG/SVG/CSV)
+This application is built entirely with vanilla web technologies (HTML, CSS, JS) emphasizing extreme performance, mobile responsiveness, and zero dependency on heavy frontend frameworks, making it blazing fast to load and interact with.
+
+## Key Features
+
+### 🗺️ Spatial Visualizations (WebGIS)
+- **Interactive Choropleth Maps**: Powered by Leaflet.js, dynamically visualizing climate metrics across Indian states and districts.
+- **Variable Selection**: Instantly switch between Mean Temperature (`tas`), Max Temperature (`tasmax`), Min Temperature (`tasmin`), and Precipitation (`pr`).
+- **Seasonality & Timeframes**: View Annual, MAM, JJAS, SON, and DJF slices.
+- **Smart Tooltips**: Glassmorphic tooltips providing precise data readouts on hover.
+
+### 📈 Time Series & Analytics
+- **Dynamic Line Charts**: Powered by Chart.js, plotting temporal climate trends up to the year 2100.
+- **Spatial Bar Charts**: Instantly compare climate data across all states side-by-side.
+- **Bi-directional Sync**: Hovering over the map highlights the corresponding state on the bar chart, and vice versa.
+- **Smart Crosshairs**: Precision tracking on time-series charts that intelligently respond to user touch/mouse inputs.
+
+### 📸 Built-in Export Studio
+- **IITM ESM MAP EXPORTER**: Download high-resolution, presentation-ready PNGs of the map view complete with legends, titles, and branding.
+- **IITM ESM PLOT EXPORTER**: Export pristine charts for research papers or presentations.
+- Fully offline rendering via `dom-to-image`.
+
+### 📱 Responsive & Progressive
+- **Mobile-First UX**: Complex controls gracefully collapse into highly intuitive flex-layouts (e.g., 71-29 split header, swipeable carousel cards).
+- **Progressive Web App (PWA)**: Built-in `sw.js` Service Worker caches assets for rapid loads and offline resilience.
+
+### 📊 Live Analytics Engine
+- **Live Viewers Tracking**: Lightweight, database-free PHP heartbeat system (`heartbeat.php`) tracks active sessions in real-time.
+- **Lifetime Visits**: Safe, concurrency-protected PHP tracker (`visits.php`) using `flock()` to guarantee accurate metrics even under heavy traffic.
+
+## Architecture & Technology Stack
+- **Frontend**: HTML5, CSS3 (Vanilla, CSS Variables for theming), JavaScript (ES6+).
+- **Mapping Engine**: [Leaflet.js](https://leafletjs.com/) (v1.9.4)
+- **Charting Engine**: [Chart.js](https://www.chartjs.org/) (v4+)
+- **Exporting**: dom-to-image
+- **Backend (Analytics only)**: PHP 7.4+
+
+## Deployment
+This dashboard is completely static (with the exception of the lightweight PHP analytic counters) and can be deployed on any standard Apache/Nginx web server.
+
+1. Clone the repository.
+2. Ensure the `JSONs/` directory has write permissions (`chmod 777 JSONs/`) so the PHP scripts can update `lifetime_visits.txt` and `active_sessions.json`.
+3. Serve via your web server. 
+
+*Note: For the analytics trackers to work, PHP must be installed and configured on the host server. If PHP is unavailable, the frontend safely falls back to local `localStorage` offline tracking without throwing errors.*
+
+## Version History
+- **v1.0.0**: Initial Production Release. Includes all core visualizations, robust mobile layouts, PWA caching, Export Studio, and live tracking.
