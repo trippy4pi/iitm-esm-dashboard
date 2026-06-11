@@ -1921,8 +1921,8 @@ footer {
 
     .mobile-controls-row .search-box {
         display: flex !important;
-        width: 50% !important;
-        flex: 1;
+        width: calc(30% - 4px) !important;
+        flex: 0 0 calc(30% - 4px) !important;
         height: auto !important;
         min-height: 44px;
         margin: 0 !important;
@@ -1933,15 +1933,15 @@ footer {
     }
 
     .mobile-controls-row .search-box:focus-within {
-        width: 50% !important;
+        width: calc(30% - 4px) !important;
         border-color: #38bdf8 !important;
     }
 
     .mobile-filter-accordion {
         display: block;
         position: relative; /* Sit in normal document flow */
-        width: 50% !important;
-        flex: 1;
+        width: calc(70% - 4px) !important;
+        flex: 0 0 calc(70% - 4px) !important;
         max-width: none !important;
         margin: 0 !important;
         background: rgba(12, 74, 110, 0.88) !important;

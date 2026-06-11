@@ -1,4 +1,4 @@
-const CACHE_NAME = "esm-viewer-v20";
+const CACHE_NAME = "esm-viewer-v21";
 const ASSETS = [
   "./",
   "./index.html",
