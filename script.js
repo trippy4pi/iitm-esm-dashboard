@@ -1624,6 +1624,7 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
                             color: '#000000',
                             padding: isMobile ? 4 : 15
                         }
+                    }
                 }
             }
         });
