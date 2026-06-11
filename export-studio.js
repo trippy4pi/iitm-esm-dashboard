@@ -187,9 +187,10 @@ function populateExportStudioModal(source, defaultTitle) {
     const isChart = source.includes('chart');
     const modal = document.getElementById('export-studio-modal');
     
+    const headerTitle = source.startsWith('map-') ? 'IITM ESM MAP EXPORTER' : 'IITM ESM PLOT EXPORTER';
     modal.innerHTML = `
         <div class="export-studio-header">
-            <h3 class="export-studio-title">Export Studio</h3>
+            <h3 class="export-studio-title">${headerTitle}</h3>
             <button class="export-studio-close" id="export-studio-close-btn">&times;</button>
         </div>
         
@@ -273,11 +274,11 @@ function populateExportStudioModal(source, defaultTitle) {
 }
 
 // ── Progress Overlay ─────────────────────────────────────────────────────────
-function showExportProgress() {
+function showExportProgress(exporterTitle = 'IITM ESM EXPORTER') {
     const modal = document.getElementById('export-studio-modal');
     modal.innerHTML = `
         <div class="export-studio-header">
-            <h3 class="export-studio-title">Export Studio</h3>
+            <h3 class="export-studio-title">${exporterTitle}</h3>
         </div>
         <div class="export-progress-wrap">
             <div class="export-progress-icon">⬇</div>
@@ -333,7 +334,15 @@ async function triggerExportStudioAction() {
     const titleText  = titleInput?.value || 'Climate Dashboard Export';
 
     // Switch modal to progress view
-    showExportProgress();
+    let exporterTitle = 'IITM ESM EXPORTER';
+    if (format === 'csv') {
+        exporterTitle = 'IITM ESM DATA EXPORTER';
+    } else if (currentExportSource.startsWith('map-')) {
+        exporterTitle = 'IITM ESM MAP EXPORTER';
+    } else {
+        exporterTitle = 'IITM ESM PLOT EXPORTER';
+    }
+    showExportProgress(exporterTitle);
     _expCurrent = 0; _expTarget = 0;
 
     try {
@@ -696,7 +705,7 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
                 const chunkIndex = Math.min(thoughts.length - 1, Math.floor(((i + 1) / totalFeatures) * thoughts.length));
                 const thought = thoughts[chunkIndex];
                 const pct = 18 + ((i + 1) / totalFeatures) * 60;
-                onProgress(pct, `${thought} (${Math.round((i+1)/totalFeatures*100)}%)`);
+                onProgress(pct, thought);
                 await sleep(550);
             }
         }
@@ -988,7 +997,7 @@ async function runExportPNG(source, titleText, scale, includeQR, onProgress, yie
                 const chunkIndex = Math.min(thoughts.length - 1, Math.floor(((i + 1) / totalFeatures) * thoughts.length));
                 const thought = thoughts[chunkIndex];
                 const pct = 18 + ((i + 1) / totalFeatures) * 60;
-                onProgress(pct, `${thought} (${Math.round((i+1)/totalFeatures*100)}%)`);
+                onProgress(pct, thought);
                 await sleep(550);
             }
         }
