@@ -151,7 +151,7 @@ window.openExportStudio = function(source) {
         const termLabel = terms[termKey]?.label || '';
         const termYears = terms[termKey]?.years || '';
         const cleanLabel = varCfg.label.toLowerCase().endsWith('change') ? varCfg.label : `${varCfg.label} Change`;
-        defaultTitle = `${cleanLabel} under ${scenario} (${seasonLabel}) - ${termLabel} ${termYears}`;
+        defaultTitle = `${seasonLabel} ${cleanLabel} under ${scenario} - ${termLabel} ${termYears}`;
     }
     
     const overlay = document.getElementById('export-studio-overlay');
