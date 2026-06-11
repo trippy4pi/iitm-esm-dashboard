@@ -2404,7 +2404,7 @@ footer {
     }
 
     body.time-series-mode .ts-window canvas {
-        padding: 24px 1rem 1.2rem 3rem !important;
+        padding: 18px 0.5rem 1.2rem 1.8rem !important;
     }
 
     #bar-graph-header {

@@ -954,6 +954,7 @@ async function updateTimeSeriesChart() {
     const scenario = window.selectedScenario();
     const varCfg = variablesConfig[metric];
     if (!varCfg) return;
+    const isMobile = window.innerWidth <= 1024;
 
     const canvas = document.getElementById('time-series-chart');
     const header = document.getElementById('mid-term-header');
@@ -1170,7 +1171,7 @@ async function updateTimeSeriesChart() {
                     suggestedMin: yMin !== null ? Math.min(0, yMin) : 0,
                     suggestedMax: yMax !== null ? yMax : undefined,
                     title: {
-                        display: true,
+                        display: !isMobile,
                         text: `${varCfg.label} (${varCfg.unit})`,
                         color: '#000000',
                         font: { weight: '900', size: 16 },
@@ -1179,7 +1180,7 @@ async function updateTimeSeriesChart() {
                 }
             },
             layout: {
-                padding: { top: 0, bottom: 0, left: window.innerWidth <= 1024 ? 12 : 5, right: 0 }
+                padding: { top: 0, bottom: 0, left: isMobile ? 0 : 5, right: 0 }
             },
             plugins: {
                 legend: {
@@ -1329,6 +1330,7 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
             return { stateName, acronym, val };
         })
         .filter(item => item.val !== null);
+    const isMobile = window.innerWidth <= 1024;
 
     // Filter by selection
     items = items.filter(item => tsVisibleStates.size === 0 || tsVisibleStates.has(item.stateName));
@@ -1407,13 +1409,14 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
         tsBarChart.data.datasets[0].data = data;
         tsBarChart.data.datasets[0].backgroundColor = barGrad;
 
-        const isMobile = window.innerWidth <= 1024;
         tsBarChart.options.scales.x.ticks.font.size = isMobile ? 8 : (useFullNames ? 14 : 12);
         tsBarChart.options.scales.x.ticks.maxRotation = isMobile ? 90 : 45;
         tsBarChart.options.scales.x.ticks.minRotation = isMobile ? 90 : 0;
         tsBarChart.options.scales.y.suggestedMin = barYMin !== null ? Math.min(0, barYMin) : 0;
         tsBarChart.options.scales.y.suggestedMax = barYMax !== null ? barYMax : undefined;
+        tsBarChart.options.scales.y.title.display = !isMobile;
         tsBarChart.options.scales.y.title.text = `${varCfg.label} (${varCfg.unit})`;
+        tsBarChart.options.layout.padding.left = isMobile ? 0 : 5;
 
         tsBarChart.update();
     } else {
@@ -1446,7 +1449,7 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
                 layout: {
                     padding: {
                         bottom: 15,
-                        left: window.innerWidth <= 1024 ? 12 : 5
+                        left: isMobile ? 0 : 5
                     }
                 },
                 onHover: (evt, elements, chart) => {
@@ -1543,7 +1546,7 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
                             padding: 8
                         },
                         title: {
-                            display: true,
+                            display: !isMobile,
                             text: `${varCfg.label} (${varCfg.unit})`,
                             font: { size: 16, weight: '900' },
                             color: '#000000',
