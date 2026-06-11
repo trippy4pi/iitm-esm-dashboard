@@ -1061,7 +1061,7 @@ body:not(.time-series-mode) .big-rect-placeholder {
     justify-content: center;
     background: #f8fafc;
     font-weight: 850;
-    font-size: clamp(0.8rem, 1.05vw, 1.15rem);
+    font-size: clamp(0.7rem, 0.9vw, 1rem);
     letter-spacing: 0.04em;
     text-transform: uppercase;
     border-bottom: 2px solid var(--border-strong);
@@ -2389,6 +2389,9 @@ footer {
     }
 
     /* Legends styling adjustments on mobile */
+    .map-header {
+        font-size: clamp(0.8rem, 1.05vw, 1.15rem) !important;
+    }
     .legend {
         width: 100% !important;
         bottom: auto !important;

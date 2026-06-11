@@ -862,13 +862,15 @@ async function updateDashboard() {
     Object.keys(terms).forEach(key => {
         const hdr = document.getElementById(terms[key].id);
         if (hdr) {
+            const isSmallScreen = window.innerWidth <= 1024;
+            const variableLabel = isSmallScreen ? `${varCfg.json_key.toUpperCase()} CHANGE` : varCfg.label;
             if (isTimeSeries) {
                 if (key === 'near') {
                     const seasonLabel = tsSeasonLabels[tsSeason] || tsSeason.toUpperCase();
-                    hdr.innerText = `${seasonLabel} ${varCfg.json_key.toUpperCase()} CHANGE ${scenario} (${tsStartYear}-${tsEndYear})`;
+                    hdr.innerText = `${seasonLabel} ${variableLabel} ${scenario} (${tsStartYear}-${tsEndYear})`;
                 }
             } else {
-                hdr.innerText = `${terms[key].label} ${varCfg.json_key.toUpperCase()} CHANGE ${scenario} ${terms[key].years}`;
+                hdr.innerText = `${terms[key].label} ${variableLabel} ${scenario} ${terms[key].years}`;
             }
         }
 
@@ -2218,6 +2220,31 @@ checkCMIP7Availability();
             const val = activeSubmenuItem.getAttribute('data-value');
             const labelText = activeSubmenuItem.textContent;
             updateMetricDropdownButtonText(currentProjection, val, labelText);
+        }
+
+        // Update map headers text if they exist and variablesConfig is loaded
+        if (typeof mapViews !== 'undefined' && variablesConfig) {
+            const metric = window.selectedMetric?.() || 'mean_temp';
+            const scenario = window.selectedScenario?.() || 'SSP585';
+            const varCfg = variablesConfig[metric];
+            if (varCfg) {
+                const isSmallScreen = window.innerWidth <= 1024;
+                const variableLabel = isSmallScreen ? `${varCfg.json_key.toUpperCase()} CHANGE` : varCfg.label;
+                const isTimeSeries = document.body.classList.contains('time-series-mode');
+                Object.keys(terms).forEach(key => {
+                    const hdr = document.getElementById(terms[key].id);
+                    if (hdr) {
+                        if (isTimeSeries) {
+                            if (key === 'near') {
+                                const seasonLabel = tsSeasonLabels[tsSeason] || tsSeason.toUpperCase();
+                                hdr.innerText = `${seasonLabel} ${variableLabel} ${scenario} (${tsStartYear}-${tsEndYear})`;
+                            }
+                        } else {
+                            hdr.innerText = `${terms[key].label} ${variableLabel} ${scenario} ${terms[key].years}`;
+                        }
+                    }
+                });
+            }
         }
 
         // Trigger map invalidation to let Leaflet update its bounds
