@@ -2502,4 +2502,25 @@ checkCMIP7Availability();
     // Run layout adjustments on resize & load
     window.addEventListener('resize', handleResponsiveLayout);
     handleResponsiveLayout();
+
+    // Global Chart Tooltip Dismissal (UX enhancement)
+    ['mousedown', 'touchstart', 'focusin'].forEach(evt => {
+        document.addEventListener(evt, (e) => {
+            if (!e.target.closest('canvas')) {
+                const tip = document.getElementById('chartjs-tooltip');
+                if (tip) tip.style.opacity = 0;
+                
+                if (typeof tsChart !== 'undefined' && tsChart) {
+                    tsChart.setActiveElements([]);
+                    if (tsChart.tooltip) tsChart.tooltip.setActiveElements([], {x:0, y:0});
+                    tsChart.update();
+                }
+                if (typeof tsBarChart !== 'undefined' && tsBarChart) {
+                    tsBarChart.setActiveElements([]);
+                    if (tsBarChart.tooltip) tsBarChart.tooltip.setActiveElements([], {x:0, y:0});
+                    tsBarChart.update();
+                }
+            }
+        }, { passive: true });
+    });
 })();
