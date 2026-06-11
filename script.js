@@ -10,8 +10,8 @@ let lockedFeatureKey = null;
 let tsData = null;
 let tsChart = null;
 let tsSeason = 'annual';
-let tsStartYear = 2010;
-let tsEndYear = 2100;
+let tsStartYear = 2015;
+let tsEndYear = 2099;
 let tsSelectedVar = 'precipitation';
 let tsFullData = null; // Cache for time_series_data.json
 let tsTriggeredByMap = false; // To show red line only on click
@@ -22,12 +22,12 @@ let tsBarDataItems = []; // For bi-directional sync
 let tsBarSort = 'az'; // Default Alphabetical A-Z
 let tsVisibleStates = new Set(); // For filtering bars
 
-function getSentenceCaseYTitle(varCfg) {
+function getTitleCaseYTitle(varCfg) {
     if (!varCfg) return '';
     const label = varCfg.label;
     const words = label.split(' ');
-    const sentenceCase = words.map((w, i) => i === 0 ? w : w.toLowerCase()).join(' ');
-    return `${sentenceCase} (${varCfg.unit})`;
+    const titleCase = words.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    return `${titleCase} (${varCfg.unit})`;
 }
 
 // Data cache to avoid redundant fetches
@@ -1153,21 +1153,24 @@ async function updateTimeSeriesChart() {
             scales: {
                 x: {
                     type: 'linear',
-                    min: tsStartYear,
-                    max: tsEndYear,
+                    min: tsStartYear === 2015 ? 2010 : tsStartYear,
+                    max: tsEndYear === 2099 ? 2100 : tsEndYear,
                     bounds: 'data',
                     grid: { display: false },
                     ticks: {
                         color: '#000000',
                         font: { weight: '750', size: isMobile ? 9 : 12 },
+                        stepSize: (tsStartYear === 2015 && tsEndYear === 2099) ? 10 : undefined,
+                        minRotation: 90,
+                        maxRotation: 90,
                         callback: val => val
                     },
                     border: { display: false },
                     title: {
-                        display: !isMobile,
+                        display: true,
                         text: 'Year',
                         color: '#000000',
-                        font: { weight: '800', size: 14 }
+                        font: { weight: '800', size: isMobile ? 10 : 14 }
                     }
                 },
                 y: {
@@ -1186,7 +1189,7 @@ async function updateTimeSeriesChart() {
                     suggestedMax: yMax !== null ? yMax : undefined,
                     title: {
                         display: true,
-                        text: isMobile ? getSentenceCaseYTitle(varCfg) : `${varCfg.label} (${varCfg.unit})`,
+                        text: getTitleCaseYTitle(varCfg),
                         color: '#000000',
                         font: { weight: '850', size: isMobile ? 9 : 16 },
                         padding: isMobile ? 2 : 15
@@ -1194,7 +1197,7 @@ async function updateTimeSeriesChart() {
                 }
             },
             layout: {
-                padding: { top: isMobile ? 2 : 0, bottom: isMobile ? 2 : 0, left: isMobile ? 2 : 5, right: isMobile ? 2 : 0 }
+                padding: { top: isMobile ? 2 : 0, bottom: isMobile ? 12 : 0, left: isMobile ? 2 : 5, right: isMobile ? 2 : 0 }
             },
             plugins: {
                 legend: {
@@ -1430,7 +1433,7 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
         tsBarChart.options.scales.y.suggestedMin = barYMin !== null ? Math.min(0, barYMin) : 0;
         tsBarChart.options.scales.y.suggestedMax = barYMax !== null ? barYMax : undefined;
         tsBarChart.options.scales.y.title.display = true;
-        tsBarChart.options.scales.y.title.text = isMobile ? getSentenceCaseYTitle(varCfg) : `${varCfg.label} (${varCfg.unit})`;
+        tsBarChart.options.scales.y.title.text = getTitleCaseYTitle(varCfg);
         tsBarChart.options.scales.y.title.font = { size: isMobile ? 9 : 16, weight: '900' };
         tsBarChart.options.scales.y.title.padding = isMobile ? 2 : 15;
         tsBarChart.options.scales.y.ticks.font = { size: isMobile ? 9 : 12, weight: '750' };
@@ -1573,7 +1576,7 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
                         },
                         title: {
                             display: true,
-                            text: isMobile ? getSentenceCaseYTitle(varCfg) : `${varCfg.label} (${varCfg.unit})`,
+                            text: getTitleCaseYTitle(varCfg),
                             font: { size: isMobile ? 9 : 16, weight: '900' },
                             color: '#000000',
                             padding: isMobile ? 2 : 15
@@ -1644,7 +1647,7 @@ function renderTimeSeriesHeader(container, stateName, varLabel, scenario) {
 
         const render = () => {
             grid.innerHTML = '';
-            for (let y = 2010; y <= 2100; y++) {
+            for (let y = 2015; y <= 2099; y++) {
                 const cell = document.createElement('button');
                 cell.className = 'year-cell';
                 cell.innerText = y;
