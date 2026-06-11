@@ -33,7 +33,7 @@ function getTitleCaseYTitle(varCfg) {
 // Data cache to avoid redundant fetches
 const _dataCache = {};
 let currentProjection = 'cmip6'; // 'cmip6' or 'cmip7'
-let startZoom = 4.5;
+let startZoom = 4.0;
 let minZoomVal = 4;
 
 // Guard flag for populateSearch to prevent duplicate listeners
@@ -377,21 +377,9 @@ function buildLegendBar(cfg) {
 // Map Initialization
 (() => {
     const width = window.innerWidth;
-    startZoom = 4.5;
-    minZoomVal = 4;
-
-    if (width <= 767) {
-        startZoom = 4.0;
-        minZoomVal = 3.5;
-    } else if (width >= 2200) {
-        // Large monitors (2K/4K)
-        startZoom = 5.0;
-        minZoomVal = 4;
-    } else {
-        // Standard desktops / laptops (like user's laptop)
-        startZoom = 4.5;
-        minZoomVal = 4;
-    }
+    // Unified default zoom for all screen sizes
+    startZoom = 4.0;
+    minZoomVal = 3.5;
 
     const center = [22.9734, 82.5];
     const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -2298,17 +2286,9 @@ checkCMIP7Availability();
 
         if (!searchContainer || !controlsPanel || !viewToggleArea) return;
 
-        const width = window.innerWidth;
-        if (width <= 767) {
-            startZoom = 4.0;
-            minZoomVal = 3.5;
-        } else if (width >= 2200) {
-            startZoom = 5.0;
-            minZoomVal = 4;
-        } else {
-            startZoom = 4.5;
-            minZoomVal = 4;
-        }
+        // Unified default zoom for all screen sizes
+        startZoom = 4.0;
+        minZoomVal = 3.5;
 
         if (isMobile !== wasMobile) {
             wasMobile = isMobile;
