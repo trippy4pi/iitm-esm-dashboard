@@ -412,7 +412,7 @@ function buildLegendBar(cfg) {
             `;
             div.addEventListener('click', (e) => {
                 e.preventDefault();
-                downloadMapPNG(term);
+                window.openExportStudio('map-' + term);
             });
             L.DomEvent.disableClickPropagation(div);
             return div;
@@ -1184,7 +1184,7 @@ async function updateTimeSeriesChart() {
                         font: { weight: '750', size: isMobile ? 9 : 12 },
                         padding: isMobile ? 3 : 8
                     },
-                    border: { display: true, color: '#000000', width: 2 },
+                    border: { display: true, color: '#000000', width: isMobile ? 1 : 2 },
                     suggestedMin: yMin !== null ? Math.min(0, yMin) : 0,
                     suggestedMax: yMax !== null ? yMax : undefined,
                     title: {
@@ -1192,12 +1192,12 @@ async function updateTimeSeriesChart() {
                         text: getTitleCaseYTitle(varCfg),
                         color: '#000000',
                         font: { weight: '850', size: isMobile ? 9 : 16 },
-                        padding: isMobile ? 2 : 15
+                        padding: isMobile ? 4 : 15
                     }
                 }
             },
             layout: {
-                padding: { top: isMobile ? 2 : 0, bottom: isMobile ? 12 : 0, left: isMobile ? 2 : 5, right: isMobile ? 2 : 0 }
+                padding: { top: isMobile ? 2 : 0, bottom: isMobile ? 12 : 0, left: isMobile ? 0 : 5, right: isMobile ? 2 : 0 }
             },
             plugins: {
                 legend: {
@@ -1214,13 +1214,13 @@ async function updateTimeSeriesChart() {
                         }
                     },
                     labels: {
-                        boxWidth: 12,
-                        boxHeight: 12,
+                        boxWidth: isMobile ? 8 : 12,
+                        boxHeight: isMobile ? 8 : 12,
                         usePointStyle: true,
                         pointStyle: 'rectRounded',
-                        padding: 10,
+                        padding: isMobile ? 16 : 10,
                         font: {
-                            size: 14,
+                            size: isMobile ? 9.5 : 14,
                             weight: '850', // Heavier weight as in image
                             family: "'Outfit', sans-serif"
                         },
@@ -1228,8 +1228,8 @@ async function updateTimeSeriesChart() {
                             const datasets = chart.data.datasets;
                             return datasets.map((ds, i) => {
                                 const isVisible = chart.isDatasetVisible(i);
-                                // Massive gap between items, but flush symbols to text
-                                const labelText = i === 0 ? ds.label + "                        " : ds.label;
+                                // Massive gap between items on desktop, but flush symbols to text
+                                const labelText = i === 0 ? ds.label + (isMobile ? "     " : "                        ") : ds.label;
                                 return {
                                     text: labelText,
                                     fillStyle: isVisible ? 'rgba(255, 255, 255, 1)' : 'transparent',
@@ -1314,6 +1314,31 @@ async function updateTimeSeriesChart() {
                     ctx.restore();
                 }
             }
+        }, {
+            id: 'zeroLineTicks',
+            beforeDraw: chart => {
+                const { ctx, chartArea, scales } = chart;
+                const xScale = scales.x;
+                const yScale = scales.y;
+                const yZeroPixel = yScale.getPixelForValue(0);
+                if (yZeroPixel >= chartArea.top && yZeroPixel <= chartArea.bottom) {
+                    ctx.save();
+                    ctx.strokeStyle = '#000000';
+                    const isPhone = window.innerWidth <= 767;
+                    ctx.lineWidth = isPhone ? 0.5 : 1;
+                    const tickHalfLength = isPhone ? 1.5 : 3;
+                    xScale.ticks.forEach(tick => {
+                        const xPixel = xScale.getPixelForValue(tick.value);
+                        if (xPixel >= chartArea.left && xPixel <= chartArea.right) {
+                            ctx.beginPath();
+                            ctx.moveTo(xPixel, yZeroPixel - tickHalfLength);
+                            ctx.lineTo(xPixel, yZeroPixel + tickHalfLength);
+                            ctx.stroke();
+                        }
+                    });
+                    ctx.restore();
+                }
+            }
         }]
     });
 
@@ -1335,9 +1360,12 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
     // 1. Update Title in Header
     const barTitleEl = document.querySelector('#bar-graph-header span');
     if (barTitleEl) {
-        const seasonLabel = tsSeasonLabels[tsSeason] || tsSeason.toUpperCase();
-        const titleLabel = isMobile ? `${varCfg.json_key.toUpperCase()} CHANGE` : varCfg.label;
-        barTitleEl.innerHTML = `State-Wise Comparison of <span style="font-weight:850; margin:0 4px;">${seasonLabel} ${titleLabel}</span> <span style="font-weight:750; margin-right:4px;">(${scenario})</span> Averaged Between <span style="font-weight:850; margin-left:4px;">${tsStartYear} to ${tsEndYear}</span>`;
+        if (isMobile) {
+            barTitleEl.innerHTML = 'STATE-WISE COMPARISON BAR GRAPH';
+        } else {
+            const seasonLabel = tsSeasonLabels[tsSeason] || tsSeason.toUpperCase();
+            barTitleEl.innerHTML = `State-Wise Comparison of <span style="font-weight:850; margin:0 4px;">${seasonLabel} ${varCfg.label}</span> <span style="font-weight:750; margin-right:4px;">(${scenario})</span> Averaged Between <span style="font-weight:850; margin-left:4px;">${tsStartYear} to ${tsEndYear}</span>`;
+        }
         barTitleEl.style.color = '#000000';
     }
 
@@ -1426,25 +1454,29 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
         tsBarChart.data.datasets[0].label = varCfg.label;
         tsBarChart.data.datasets[0].data = data;
         tsBarChart.data.datasets[0].backgroundColor = barGrad;
-
-        tsBarChart.options.scales.x.ticks.font.size = isMobile ? 9 : (useFullNames ? 14 : 12);
+        tsBarChart.data.datasets[0].categoryPercentage = isMobile ? 0.78 : 0.9;
+        tsBarChart.data.datasets[0].barPercentage = isMobile ? 0.85 : 0.9;
+ 
+        tsBarChart.options.scales.x.ticks.autoSkip = false;
+        tsBarChart.options.scales.x.ticks.font.size = isMobile ? 7.5 : (useFullNames ? 14 : 12);
         tsBarChart.options.scales.x.ticks.maxRotation = isMobile ? 90 : 45;
         tsBarChart.options.scales.x.ticks.minRotation = isMobile ? 90 : 0;
+        tsBarChart.options.scales.y.border = { display: true, color: '#000000', width: isMobile ? 1 : 2 };
         tsBarChart.options.scales.y.suggestedMin = barYMin !== null ? Math.min(0, barYMin) : 0;
         tsBarChart.options.scales.y.suggestedMax = barYMax !== null ? barYMax : undefined;
         tsBarChart.options.scales.y.title.display = true;
         tsBarChart.options.scales.y.title.text = getTitleCaseYTitle(varCfg);
         tsBarChart.options.scales.y.title.font = { size: isMobile ? 9 : 16, weight: '900' };
-        tsBarChart.options.scales.y.title.padding = isMobile ? 2 : 15;
+        tsBarChart.options.scales.y.title.padding = isMobile ? 8 : 15;
         tsBarChart.options.scales.y.ticks.font = { size: isMobile ? 9 : 12, weight: '750' };
         tsBarChart.options.scales.y.ticks.padding = isMobile ? 3 : 8;
         tsBarChart.options.layout.padding = {
             top: isMobile ? 2 : 0,
             bottom: isMobile ? 2 : 15,
-            left: isMobile ? 2 : 5,
+            left: isMobile ? 8 : 5,
             right: isMobile ? 2 : 0
         };
-
+ 
         tsBarChart.update();
     } else {
         // Clean up orphaned tooltip element from bar chart
@@ -1462,8 +1494,8 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
                     hoverBackgroundColor: '#60a5fa',
                     borderRadius: 6,
                     borderSkipped: false,
-                    categoryPercentage: 0.9,
-                    barPercentage: 0.9
+                    categoryPercentage: isMobile ? 0.78 : 0.9,
+                    barPercentage: isMobile ? 0.85 : 0.9
                 }]
             },
             options: {
@@ -1477,7 +1509,7 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
                     padding: {
                         top: isMobile ? 2 : 0,
                         bottom: isMobile ? 2 : 15,
-                        left: isMobile ? 2 : 5,
+                        left: isMobile ? 0 : 5,
                         right: isMobile ? 2 : 0
                     }
                 },
@@ -1548,7 +1580,8 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
                 scales: {
                     x: {
                         ticks: {
-                            font: { size: isMobile ? 9 : (useFullNames ? 14 : 12), weight: '900' },
+                            autoSkip: false,
+                            font: { size: isMobile ? 7.5 : (useFullNames ? 14 : 12), weight: '900' },
                             color: '#000000',
                             padding: isMobile ? 3 : 6,
                             maxRotation: isMobile ? 90 : 45,
@@ -1566,7 +1599,7 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
                             lineWidth: (context) => (context.tick.value === 0 && data.some(v => v < 0)) ? 1 : 1,
                             drawTicks: false
                         },
-                        border: { display: true, color: '#000000', width: 2 },
+                        border: { display: true, color: '#000000', width: isMobile ? 1 : 2 },
                         suggestedMin: barYMin !== null ? Math.min(0, barYMin) : 0,
                         suggestedMax: barYMax !== null ? barYMax : undefined,
                         ticks: {
@@ -1579,7 +1612,7 @@ function updateTimeSeriesBarChart(varCfg, scenario) {
                             text: getTitleCaseYTitle(varCfg),
                             font: { size: isMobile ? 9 : 16, weight: '900' },
                             color: '#000000',
-                            padding: isMobile ? 2 : 15
+                            padding: isMobile ? 4 : 15
                         }
                     }
                 }
@@ -1604,40 +1637,71 @@ function renderTimeSeriesHeader(container, stateName, varLabel, scenario) {
         { id: 'djf', label: 'DJF (Dec-Feb)' }
     ];
 
-    container.innerHTML = `
-        <div class="ts-control-group" style="color:#000000;">
-            <div class="ts-header-row">
-                Time Series of <span id="ts-title-state" style="font-weight:850; margin:0 4px; color:#000000;">${stateName}</span> for 
-                <select class="ts-select" id="ts-season-select" style="margin-right:8px;">
-                    ${seasons.map(s => `<option value="${s.id}" ${tsSeason === s.id ? 'selected' : ''}>${s.label}</option>`).join('')}
-                </select>
-            </div>
-            <div class="ts-header-row">
-                <span id="ts-title-varlabel" style="margin-right:8px; color:#000000; font-weight:850;">${varLabel}</span>
-                <span id="ts-title-scenario" style="font-weight:750; margin-right:4px; color:#000000;">(${scenario})</span> 
-            </div>
-            <div class="ts-header-row" style="display:inline-flex; align-items:center; gap:6px; margin-left:8px;">
-                <div class="year-picker-container">
-                    <button class="year-picker-btn" id="start-year-trigger">${tsStartYear}</button>
-                    <div class="year-picker-popup" id="start-picker-popup">
-                        <div class="picker-header"><span>Select Start Year</span></div>
-                        <div class="year-grid" id="start-year-grid"></div>
+    if (isMobile) {
+        container.innerHTML = `
+            <div class="ts-control-group" style="color:#000000; font-size: 0.72rem; font-weight: 850;">
+                <div class="ts-header-row" style="display:inline-flex; align-items:center; gap:5px; justify-content:center; width:100%;">
+                    <span>TIME SERIES</span>
+                    <select class="ts-select" id="ts-season-select" style="font-weight:850;">
+                        ${seasons.map(s => `<option value="${s.id}" ${tsSeason === s.id ? 'selected' : ''}>${s.label}</option>`).join('')}
+                    </select>
+                    <div class="year-picker-container">
+                        <button class="year-picker-btn" id="start-year-trigger" style="font-weight:850; font-size:0.72rem; padding: 2px 4px;">${tsStartYear}</button>
+                        <div class="year-picker-popup" id="start-picker-popup">
+                            <div class="picker-header"><span>Select Start Year</span></div>
+                            <div class="year-grid" id="start-year-grid"></div>
+                        </div>
                     </div>
-                </div>
-                <span style="font-weight:700; font-size:0.75rem; color:#000000;">to</span>
-                <div class="year-picker-container">
-                    <button class="year-picker-btn" id="end-year-trigger">${tsEndYear}</button>
-                    <div class="year-picker-popup" id="end-picker-popup">
-                        <div class="picker-header"><span>Select End Year</span></div>
-                        <div class="year-grid" id="end-year-grid"></div>
+                    <span style="font-weight:800; font-size:0.7rem; color:#000000;">TO</span>
+                    <div class="year-picker-container">
+                        <button class="year-picker-btn" id="end-year-trigger" style="font-weight:850; font-size:0.72rem; padding: 2px 4px;">${tsEndYear}</button>
+                        <div class="year-picker-popup" id="end-picker-popup">
+                            <div class="picker-header"><span>Select End Year</span></div>
+                            <div class="year-grid" id="end-year-grid"></div>
+                        </div>
                     </div>
+                    <button id="download-line-chart" class="chart-download-btn" title="Download Line Chart as PNG">
+                        <img src="assets/icons/lucide-download.svg" alt="Download">
+                    </button>
                 </div>
-                <button id="download-line-chart" class="chart-download-btn" title="Download Line Chart as PNG" style="margin-left:12px;">
-                    <img src="assets/icons/lucide-download.svg" alt="Download">
-                </button>
             </div>
-        </div>
-    `;
+        `;
+    } else {
+        container.innerHTML = `
+            <div class="ts-control-group" style="color:#000000;">
+                <div class="ts-header-row">
+                    Time Series of <span id="ts-title-state" style="font-weight:850; margin:0 4px; color:#000000;">${stateName}</span> for 
+                    <select class="ts-select" id="ts-season-select" style="margin-right:8px;">
+                        ${seasons.map(s => `<option value="${s.id}" ${tsSeason === s.id ? 'selected' : ''}>${s.label}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="ts-header-row">
+                    <span id="ts-title-varlabel" style="margin-right:8px; color:#000000; font-weight:850;">${varLabel}</span>
+                    <span id="ts-title-scenario" style="font-weight:750; margin-right:4px; color:#000000;">(${scenario})</span> 
+                </div>
+                <div class="ts-header-row" style="display:inline-flex; align-items:center; gap:6px; margin-left:8px;">
+                    <div class="year-picker-container">
+                        <button class="year-picker-btn" id="start-year-trigger">${tsStartYear}</button>
+                        <div class="year-picker-popup" id="start-picker-popup">
+                            <div class="picker-header"><span>Select Start Year</span></div>
+                            <div class="year-grid" id="start-year-grid"></div>
+                        </div>
+                    </div>
+                    <span style="font-weight:700; font-size:0.75rem; color:#000000;">to</span>
+                    <div class="year-picker-container">
+                        <button class="year-picker-btn" id="end-year-trigger">${tsEndYear}</button>
+                        <div class="year-picker-popup" id="end-picker-popup">
+                            <div class="picker-header"><span>Select End Year</span></div>
+                            <div class="year-grid" id="end-year-grid"></div>
+                        </div>
+                    </div>
+                    <button id="download-line-chart" class="chart-download-btn" title="Download Line Chart as PNG" style="margin-left:12px;">
+                        <img src="assets/icons/lucide-download.svg" alt="Download">
+                    </button>
+                </div>
+            </div>
+        `;
+    }
 
     const setupPicker = (type) => {
         const isStart = type === 'start';
@@ -1713,7 +1777,7 @@ function renderTimeSeriesHeader(container, stateName, varLabel, scenario) {
     if (dlLineBtn) {
         dlLineBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            downloadChartPNG('time-series-chart', 'time-series-line-chart.png');
+            window.openExportStudio('line-chart');
         });
     }
 }
@@ -1784,7 +1848,13 @@ function populateSearch() {
         return labels[parseInt(checked?.value || 3)];
     };
 
-    if (metricSelect) metricSelect.addEventListener('change', updateDashboard);
+    if (metricSelect) {
+        metricSelect.addEventListener('change', updateDashboard);
+        metricSelect.addEventListener('change', () => {
+            const accordion = document.getElementById('mobile-filter-accordion');
+            if (accordion) accordion.classList.remove('open');
+        });
+    }
     if (sspRadios) sspRadios.forEach(r => r.addEventListener('change', updateDashboard));
 
     // View Mode Toggle Logic
@@ -1792,6 +1862,11 @@ function populateSearch() {
     if (viewToggle) {
         viewToggle.addEventListener('change', () => {
             const isTimeSeries = viewToggle.checked;
+            
+            // Auto-close control panel on mobile
+            const accordion = document.getElementById('mobile-filter-accordion');
+            if (accordion) accordion.classList.remove('open');
+
             const containers = document.querySelectorAll('.map-container');
             containers.forEach(c => c.classList.add('is-loading'));
 
@@ -2020,7 +2095,7 @@ function downloadMapPNG(term) {
     if (dlBarBtn) {
         dlBarBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            downloadChartPNG('time-series-bar-chart', 'time-series-bar-chart.png');
+            window.openExportStudio('bar-chart');
         });
     }
 })();
