@@ -468,9 +468,8 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
         const yMin = tsChart.scales.y.min;
         const yMax = tsChart.scales.y.max;
         const yTicks = tsChart.scales.y.ticks.map(t => t.value);
-        const years = tsChart.data.labels;
-        const minYear = years[0];
-        const maxYear = years[years.length - 1];
+        const minYear = tsStartYear || 2015;
+        const maxYear = tsEndYear || 2099;
         
         const svgWidth = 800;
         const svgHeight = 600;
@@ -481,37 +480,53 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
         const getSvgX = (yr) => padding.left + ((yr - minYear) / (maxYear - minYear)) * plotWidth;
         const getSvgY = (val) => padding.top + plotHeight - ((val - yMin) / (yMax - yMin)) * plotHeight;
         
-        const subtitleText = `Scenario: ${scenario} | Season: ${seasonLabel} | Period: ${tsStartYear}-${tsEndYear}`;
+        const subtitleText = `Scenario: ${scenario} | Season: ${seasonLabel} | Period: ${minYear}-${maxYear}`;
         
+        // Build area gradients definitions
+        let gradientsDefs = '';
+        tsChart.data.datasets.forEach((ds, idx) => {
+            gradientsDefs += `
+        <linearGradient id="area-grad-${idx}" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${ds.borderColor}" stop-opacity="0.28" />
+            <stop offset="100%" stop-color="${ds.borderColor}" stop-opacity="0.0" />
+        </linearGradient>`;
+        });
+
         svgContent += `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgWidth} ${svgHeight}" width="100%" height="100%">
+    <defs>
+        <linearGradient id="plot-bg-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f8fafc" />
+            <stop offset="100%" stop-color="#ffffff" />
+        </linearGradient>${gradientsDefs}
+    </defs>
     <rect width="${svgWidth}" height="${svgHeight}" fill="#ffffff" />
     
-    <text x="${svgWidth / 2}" y="45" font-family="Arial" font-size="20" font-weight="bold" text-anchor="middle" fill="#0f172a">${titleText}</text>
-    <text x="${svgWidth / 2}" y="72" font-family="Arial" font-size="13" fill="#64748b" text-anchor="middle">${subtitleText}</text>
+    <text x="${svgWidth / 2}" y="45" font-family="System-UI, -apple-system, sans-serif" font-size="20" font-weight="bold" text-anchor="middle" fill="#0f172a">${titleText}</text>
+    <text x="${svgWidth / 2}" y="72" font-family="System-UI, -apple-system, sans-serif" font-size="13" fill="#64748b" text-anchor="middle">${subtitleText}</text>
     
-    <rect x="${padding.left}" y="${padding.top}" width="${plotWidth}" height="${plotHeight}" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" />
+    <rect x="${padding.left}" y="${padding.top}" width="${plotWidth}" height="${plotHeight}" fill="url(#plot-bg-grad)" stroke="#cbd5e1" stroke-width="1.0" />
 `;
 
         // Horizontal Gridlines & Labels
         yTicks.forEach(tick => {
             const y = getSvgY(tick);
-            svgContent += `    <line x1="${padding.left}" y1="${y.toFixed(1)}" x2="${(svgWidth - padding.right).toFixed(1)}" y2="${y.toFixed(1)}" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="2,2" />\n`;
-            svgContent += `    <text x="${(padding.left - 12).toFixed(1)}" y="${y.toFixed(1)}" font-family="Arial" font-size="11" text-anchor="end" dominant-baseline="middle" fill="#64748b">${tick.toFixed(1)}</text>\n`;
+            svgContent += `    <line x1="${padding.left}" y1="${y.toFixed(1)}" x2="${(svgWidth - padding.right).toFixed(1)}" y2="${y.toFixed(1)}" stroke="#e2e8f0" stroke-width="0.75" stroke-dasharray="3,3" />\n`;
+            svgContent += `    <text x="${(padding.left - 12).toFixed(1)}" y="${y.toFixed(1)}" font-family="System-UI, -apple-system, sans-serif" font-size="11" text-anchor="end" dominant-baseline="middle" fill="#64748b">${tick.toFixed(1)}</text>\n`;
         });
         
         // Vertical Gridlines & Labels (Every 10 years)
         for (let yr = Math.ceil(minYear / 10) * 10; yr <= maxYear; yr += 10) {
             const x = getSvgX(yr);
-            svgContent += `    <line x1="${x.toFixed(1)}" y1="${padding.top}" x2="${x.toFixed(1)}" y2="${(svgHeight - padding.bottom).toFixed(1)}" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="2,2" />\n`;
-            svgContent += `    <text x="${x.toFixed(1)}" y="${(svgHeight - padding.bottom + 18).toFixed(1)}" font-family="Arial" font-size="11" text-anchor="middle" fill="#64748b">${yr}</text>\n`;
+            svgContent += `    <line x1="${x.toFixed(1)}" y1="${padding.top}" x2="${x.toFixed(1)}" y2="${(svgHeight - padding.bottom).toFixed(1)}" stroke="#e2e8f0" stroke-width="0.75" stroke-dasharray="3,3" />\n`;
+            svgContent += `    <text x="${x.toFixed(1)}" y="${(svgHeight - padding.bottom + 18).toFixed(1)}" font-family="System-UI, -apple-system, sans-serif" font-size="11" text-anchor="middle" fill="#64748b">${yr}</text>\n`;
         }
         
         // Axis Titles
-        svgContent += `    <text x="${(padding.left + plotWidth / 2).toFixed(1)}" y="${(svgHeight - padding.bottom + 48).toFixed(1)}" font-family="Arial" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">Year</text>\n`;
-        svgContent += `    <text transform="rotate(-90)" x="-${(padding.top + plotHeight / 2).toFixed(1)}" y="${(padding.left - 50).toFixed(1)}" font-family="Arial" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">${varCfg.label} Change (${varCfg.unit})</text>\n`;
+        svgContent += `    <text x="${(padding.left + plotWidth / 2).toFixed(1)}" y="${(svgHeight - padding.bottom + 48).toFixed(1)}" font-family="System-UI, -apple-system, sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">Year</text>\n`;
+        svgContent += `    <text transform="rotate(-90)" x="-${(padding.top + plotHeight / 2).toFixed(1)}" y="${(padding.left - 50).toFixed(1)}" font-family="System-UI, -apple-system, sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">${varCfg.label} Change (${varCfg.unit})</text>\n`;
         
         // Draw lines
-        tsChart.data.datasets.forEach(ds => {
+        tsChart.data.datasets.forEach((ds, idx) => {
             let points = [];
             ds.data.forEach(pt => {
                 if (pt && pt.y !== null && pt.y !== undefined) {
@@ -519,6 +534,17 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
                 }
             });
             if (points.length > 0) {
+                // Draw filled area underneath the line first
+                const firstPt = points[0];
+                const lastPt = points[points.length - 1];
+                const firstPtX = firstPt.split(',')[0];
+                const lastPtX = lastPt.split(',')[0];
+                const baselineY = (padding.top + plotHeight).toFixed(1);
+                
+                const fillPoints = `${firstPt} ${points.join(' ')} ${lastPtX},${baselineY} ${firstPtX},${baselineY}`;
+                svgContent += `    <polygon points="${fillPoints}" fill="url(#area-grad-${idx})" stroke="none" />\n`;
+                
+                // Draw the line path
                 svgContent += `    <polyline points="${points.join(' ')}" fill="none" stroke="${ds.borderColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />\n`;
             }
         });
@@ -528,7 +554,7 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
         tsChart.data.datasets.forEach((ds, idx) => {
             legendX -= 130;
             svgContent += `    <rect x="${legendX}" y="88" width="16" height="10" fill="${ds.borderColor}" rx="2" />\n`;
-            svgContent += `    <text x="${legendX + 22}" y="97" font-family="Arial" font-size="11" fill="#334155" font-weight="bold">${ds.label}</text>\n`;
+            svgContent += `    <text x="${legendX + 22}" y="97" font-family="System-UI, -apple-system, sans-serif" font-size="11" fill="#334155" font-weight="bold">${ds.label}</text>\n`;
         });
         
     } else if (source === 'bar-chart') {
@@ -561,19 +587,25 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
         const subtitleText = `Scenario: ${scenario} | Season: ${seasonLabel} | Period: 2015-2099 Anomalies`;
         
         svgContent += `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgWidth} ${svgHeight}" width="100%" height="100%">
+    <defs>
+        <linearGradient id="plot-bg-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f8fafc" />
+            <stop offset="100%" stop-color="#ffffff" />
+        </linearGradient>
+    </defs>
     <rect width="${svgWidth}" height="${svgHeight}" fill="#ffffff" />
     
-    <text x="${svgWidth / 2}" y="45" font-family="Arial" font-size="20" font-weight="bold" text-anchor="middle" fill="#0f172a">${titleText}</text>
-    <text x="${svgWidth / 2}" y="72" font-family="Arial" font-size="13" fill="#64748b" text-anchor="middle">${subtitleText}</text>
+    <text x="${svgWidth / 2}" y="45" font-family="System-UI, -apple-system, sans-serif" font-size="20" font-weight="bold" text-anchor="middle" fill="#0f172a">${titleText}</text>
+    <text x="${svgWidth / 2}" y="72" font-family="System-UI, -apple-system, sans-serif" font-size="13" fill="#64748b" text-anchor="middle">${subtitleText}</text>
     
-    <rect x="${padding.left}" y="${padding.top}" width="${plotWidth}" height="${plotHeight}" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" />
+    <rect x="${padding.left}" y="${padding.top}" width="${plotWidth}" height="${plotHeight}" fill="url(#plot-bg-grad)" stroke="#cbd5e1" stroke-width="1.0" />
 `;
 
         // Horizontal Gridlines & Labels
         yTicks.forEach(tick => {
             const y = getSvgY(tick);
-            svgContent += `    <line x1="${padding.left}" y1="${y.toFixed(1)}" x2="${(svgWidth - padding.right).toFixed(1)}" y2="${y.toFixed(1)}" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="2,2" />\n`;
-            svgContent += `    <text x="${(padding.left - 12).toFixed(1)}" y="${y.toFixed(1)}" font-family="Arial" font-size="11" text-anchor="end" dominant-baseline="middle" fill="#64748b">${tick.toFixed(1)}</text>\n`;
+            svgContent += `    <line x1="${padding.left}" y1="${y.toFixed(1)}" x2="${(svgWidth - padding.right).toFixed(1)}" y2="${y.toFixed(1)}" stroke="#e2e8f0" stroke-width="0.75" stroke-dasharray="3,3" />\n`;
+            svgContent += `    <text x="${(padding.left - 12).toFixed(1)}" y="${y.toFixed(1)}" font-family="System-UI, -apple-system, sans-serif" font-size="11" text-anchor="end" dominant-baseline="middle" fill="#64748b">${tick.toFixed(1)}</text>\n`;
         });
         
         const nBars = items.length;
@@ -599,11 +631,11 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
                 ? item.stateName.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
                 : item.acronym;
                 
-            svgContent += `    <text x="${(x + barWidth / 2).toFixed(1)}" y="${(svgHeight - padding.bottom + 16).toFixed(1)}" font-family="Arial" font-size="${nBars > 20 ? 8 : 10}" text-anchor="end" dominant-baseline="middle" fill="#475569" transform="rotate(-45, ${(x + barWidth / 2).toFixed(1)}, ${(svgHeight - padding.bottom + 16).toFixed(1)})">${labelText}</text>\n`;
+            svgContent += `    <text x="${(x + barWidth / 2).toFixed(1)}" y="${(svgHeight - padding.bottom + 16).toFixed(1)}" font-family="System-UI, -apple-system, sans-serif" font-size="${nBars > 20 ? 8 : 10}" text-anchor="end" dominant-baseline="middle" fill="#475569" transform="rotate(-45, ${(x + barWidth / 2).toFixed(1)}, ${(svgHeight - padding.bottom + 16).toFixed(1)})">${labelText}</text>\n`;
         });
         
         // Axis Title
-        svgContent += `    <text transform="rotate(-90)" x="-${(padding.top + plotHeight / 2).toFixed(1)}" y="${(padding.left - 50).toFixed(1)}" font-family="Arial" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">${varCfg.label} Change (${varCfg.unit})</text>\n`;
+        svgContent += `    <text transform="rotate(-90)" x="-${(padding.top + plotHeight / 2).toFixed(1)}" y="${(padding.left - 50).toFixed(1)}" font-family="System-UI, -apple-system, sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">${varCfg.label} Change (${varCfg.unit})</text>\n`;
         
     } else if (source.startsWith('map-')) {
         onProgress(5, 'Loading district boundaries from GeoJSON data…');
