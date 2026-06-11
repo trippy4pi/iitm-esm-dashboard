@@ -7,19 +7,19 @@ const MAP_BOUNDS = {
     maxLat: 37.5
 };
 
-// Help helper to get Mercator coordinates
-function projectMercator(lat, lng) {
-    const x = lng;
-    const latRad = (lat * Math.PI) / 180;
-    const y = Math.log(Math.tan(Math.PI / 4 + latRad / 2));
-    return { x, y };
+// Equirectangular projection helper (direct lat/lng scale — fills canvas correctly)
+// Returns normalised 0-1 coords based on actual data bounds
+function makeProjector(bounds, drawX, drawY, drawW, drawH) {
+    const lngSpan = bounds.maxLng - bounds.minLng;
+    const latSpan = bounds.maxLat - bounds.minLat;
+    // Stretch to fill, Y is flipped (lat increases upward)
+    return function(lat, lng) {
+        return {
+            x: drawX + ((lng - bounds.minLng) / lngSpan) * drawW,
+            y: drawY + drawH - ((lat - bounds.minLat) / latSpan) * drawH
+        };
+    };
 }
-
-// Bounding box in Mercator coordinates
-const boundsMercator = {
-    min: projectMercator(MAP_BOUNDS.minLat, MAP_BOUNDS.minLng),
-    max: projectMercator(MAP_BOUNDS.maxLat, MAP_BOUNDS.maxLng)
-};
 
 // Helper to calculate exact bounds of GeoJSON features
 function getGeoJSONBounds(geojson) {
@@ -520,128 +520,128 @@ async function runExportSVG(source, titleText, includeQR) {
         const termKey = source.replace('map-', '');
         const termLabel = terms[termKey]?.label || '';
         const termYears = terms[termKey]?.years || '';
-        
+
+        // --- Layout ---
+        // Padding: left for lat labels, bottom for lng labels
+        const svgWidth  = 800;
+        const svgHeight = 980;
+        const padLeft   = 68;   // room for lat tick labels
+        const padRight  = 20;
+        const padTop    = 100;  // title + subtitle
+        const padBottom = 160;  // colorbar + footer
+
+        const drawW = svgWidth  - padLeft - padRight;
+        const drawH = svgHeight - padTop  - padBottom;
+
         const bounds = getGeoJSONBounds(datasetGeoJSON);
-        const minProj = projectMercator(bounds.minLat, bounds.minLng);
-        const maxProj = projectMercator(bounds.maxLat, bounds.maxLng);
-        
-        const dx = maxProj.x - minProj.x;
-        const dy = maxProj.y - minProj.y;
-        const aspect = dx / dy;
-        
-        const svgWidth = 800;
-        const svgHeight = 900;
-        const paddingOffset = 40;
-        
-        const drawWidth = svgWidth - 2 * paddingOffset;
-        const drawHeight = 550;
-        
-        let finalDrawWidth = drawWidth;
-        let finalDrawHeight = drawHeight;
-        
-        if (drawWidth / drawHeight > aspect) {
-            finalDrawWidth = drawHeight * aspect;
+
+        // Equirectangular: preserve aspect (lngSpan/latSpan corrected for cosine)
+        const lngSpan    = bounds.maxLng - bounds.minLng;
+        const latSpan    = bounds.maxLat - bounds.minLat;
+        const midLat     = (bounds.minLat + bounds.maxLat) / 2;
+        const cosCorrect = Math.cos((midLat * Math.PI) / 180);
+        const geoAspect  = (lngSpan * cosCorrect) / latSpan;
+        const canvAspect = drawW / drawH;
+
+        let finalW = drawW, finalH = drawH;
+        if (geoAspect < canvAspect) {
+            finalW = drawH * geoAspect;
         } else {
-            finalDrawHeight = drawWidth / aspect;
+            finalH = drawW / geoAspect;
         }
-        
-        const offsetX = paddingOffset + (drawWidth - finalDrawWidth) / 2;
-        const offsetY = 120 + (drawHeight - finalDrawHeight) / 2;
-        
-        const getSvgX = (lng) => {
-            const proj = projectMercator(bounds.minLat, lng);
-            return offsetX + ((proj.x - minProj.x) / (maxProj.x - minProj.x)) * finalDrawWidth;
-        };
-        const getSvgY = (lat) => {
-            const proj = projectMercator(lat, bounds.minLng);
-            return offsetY + finalDrawHeight - ((proj.y - minProj.y) / (maxProj.y - minProj.y)) * finalDrawHeight;
-        };
-        
-        const projectFunc = (lat, lng) => ({
-            x: getSvgX(lng),
-            y: getSvgY(lat)
-        });
-        
+        const offX = padLeft + (drawW - finalW) / 2;
+        const offY = padTop  + (drawH - finalH) / 2;
+
+        const projectFunc = makeProjector(bounds, offX, offY, finalW, finalH);
+        const getSvgX = lng => projectFunc(bounds.minLat, lng).x;
+        const getSvgY = lat => projectFunc(lat, bounds.minLng).y;
+
         const subtitleText = `Scenario: ${scenario} | Season: ${seasonLabel} | Scale Level: ${currentLevel.toUpperCase()}`;
         const scenCfg = varCfg.scenarios[scenario];
-        
+
         svgContent += `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgWidth} ${svgHeight}" width="100%" height="100%">
     <rect width="${svgWidth}" height="${svgHeight}" fill="#ffffff" />
-    
-    <text x="${svgWidth / 2}" y="45" font-family="Arial" font-size="20" font-weight="bold" text-anchor="middle" fill="#0f172a">${titleText}</text>
-    <text x="${svgWidth / 2}" y="72" font-family="Arial" font-size="13" fill="#64748b" text-anchor="middle">${subtitleText}</text>
+    <text x="${(svgWidth/2).toFixed(1)}" y="46" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#0f172a">${titleText}</text>
+    <text x="${(svgWidth/2).toFixed(1)}" y="70" font-family="Arial" font-size="12" fill="#64748b" text-anchor="middle">${subtitleText}</text>
 `;
 
-        // Render GeoJSON polygons
+        // --- GeoJSON polygons ---
         datasetGeoJSON.features.forEach(feature => {
             const featureKey = levelsCfg[currentLevel].keyGen(feature.properties);
-            const dataRow = window.dataLookup[featureKey];
-            
+            const dataRow    = window.dataLookup[featureKey];
             let val = null;
             if (isTimeSeries) {
                 val = (termKey === 'near') ? (tsPeriodMeans[featureKey.toUpperCase()] || null) : null;
             } else {
                 val = dataRow ? dataRow[`${varCfg.json_key}_${scenario.toLowerCase()}_${termKey}`] : null;
             }
-            
             const fillColor = window.getColor(val, scenCfg);
             const d = geojsonToSvgPath(feature.geometry, projectFunc);
-            
             svgContent += `    <path d="${d}" fill="${fillColor}" stroke="#1e293b" stroke-width="0.5" stroke-linejoin="round" />\n`;
         });
-        
-        // Spatial Area Border Box
-        svgContent += `    <rect x="${offsetX.toFixed(1)}" y="${offsetY.toFixed(1)}" width="${finalDrawWidth.toFixed(1)}" height="${finalDrawHeight.toFixed(1)}" fill="none" stroke="#0f172a" stroke-width="1.5" />\n`;
-        
-        // Latitude / Longitude ticks
-        const latTicks = [10, 15, 20, 25, 30, 35].filter(lat => lat >= bounds.minLat && lat <= bounds.maxLat);
-        const lngTicks = [70, 75, 80, 85, 90, 95].filter(lng => lng >= bounds.minLng && lng <= bounds.maxLng);
-        
-        latTicks.forEach(lat => {
+
+        // --- Map border ---
+        svgContent += `    <rect x="${offX.toFixed(1)}" y="${offY.toFixed(1)}" width="${finalW.toFixed(1)}" height="${finalH.toFixed(1)}" fill="none" stroke="#0f172a" stroke-width="1.5" />\n`;
+
+        // --- Lat/Lon ticks every 5° ---
+        const step = 5;
+        const latStart = Math.ceil(bounds.minLat / step) * step;
+        const lngStart = Math.ceil(bounds.minLng / step) * step;
+
+        for (let lat = latStart; lat <= bounds.maxLat; lat += step) {
             const y = getSvgY(lat);
-            svgContent += `    <line x1="${offsetX.toFixed(1)}" y1="${y.toFixed(1)}" x2="${(offsetX - 6).toFixed(1)}" y2="${y.toFixed(1)}" stroke="#0f172a" stroke-width="1" />\n`;
-            svgContent += `    <text x="${(offsetX - 10).toFixed(1)}" y="${y.toFixed(1)}" font-family="Arial" font-size="10" font-weight="bold" text-anchor="end" dominant-baseline="middle" fill="#0f172a">${lat}°N</text>\n`;
-        });
-        
-        lngTicks.forEach(lng => {
+            svgContent += `    <line x1="${offX.toFixed(1)}" y1="${y.toFixed(1)}" x2="${(offX-6).toFixed(1)}" y2="${y.toFixed(1)}" stroke="#0f172a" stroke-width="1" />\n`;
+            svgContent += `    <text x="${(offX-9).toFixed(1)}" y="${y.toFixed(1)}" font-family="Arial" font-size="10" font-weight="bold" text-anchor="end" dominant-baseline="middle" fill="#0f172a">${lat}°N</text>\n`;
+        }
+        for (let lng = lngStart; lng <= bounds.maxLng; lng += step) {
             const x = getSvgX(lng);
-            svgContent += `    <line x1="${x.toFixed(1)}" y1="${(offsetY + finalDrawHeight).toFixed(1)}" x2="${x.toFixed(1)}" y2="${(offsetY + finalDrawHeight + 6).toFixed(1)}" stroke="#0f172a" stroke-width="1" />\n`;
-            svgContent += `    <text x="${x.toFixed(1)}" y="${(offsetY + finalDrawHeight + 16).toFixed(1)}" font-family="Arial" font-size="10" font-weight="bold" text-anchor="middle" fill="#0f172a">${lng}°E</text>\n`;
+            svgContent += `    <line x1="${x.toFixed(1)}" y1="${(offY+finalH).toFixed(1)}" x2="${x.toFixed(1)}" y2="${(offY+finalH+6).toFixed(1)}" stroke="#0f172a" stroke-width="1" />\n`;
+            svgContent += `    <text x="${x.toFixed(1)}" y="${(offY+finalH+16).toFixed(1)}" font-family="Arial" font-size="10" font-weight="bold" text-anchor="middle" fill="#0f172a">${lng}°E</text>\n`;
+        }
+
+        // --- Colorbar ---
+        const arrowW  = 14;
+        const barW    = finalW * 0.7;
+        const barH    = 16;
+        const barX    = offX + (finalW - barW) / 2;
+        const barY    = offY + finalH + 50;
+
+        const scenCfgColors = scenCfg.colors;
+        const nColors  = scenCfgColors.length;
+        const rectW    = barW / nColors;
+        scenCfgColors.forEach((color, idx) => {
+            const rx = barX + idx * rectW;
+            svgContent += `    <rect x="${rx.toFixed(1)}" y="${barY.toFixed(1)}" width="${(rectW+0.2).toFixed(1)}" height="${barH.toFixed(1)}" fill="${color}" stroke="none" />\n`;
         });
-        
-        // Color scale bar
-        const barWidth = finalDrawWidth * 0.65;
-        const barHeight = 14;
-        const barX = offsetX + (finalDrawWidth - barWidth) / 2;
-        const barY = offsetY + finalDrawHeight + 60;
-        
-        // CONTIGUOUS RECTANGLES FOR COMPATIBILITY
-        const nColors = scenCfg.colors.length;
-        const rectWidth = barWidth / nColors;
-        scenCfg.colors.forEach((color, idx) => {
-            const rx = barX + idx * rectWidth;
-            svgContent += `    <rect x="${rx.toFixed(1)}" y="${barY.toFixed(1)}" width="${(rectWidth + 0.15).toFixed(1)}" height="${barHeight.toFixed(1)}" fill="${color}" stroke="none" />\n`;
-        });
-        svgContent += `    <rect x="${barX.toFixed(1)}" y="${barY.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${barHeight.toFixed(1)}" fill="none" stroke="#0f172a" stroke-width="1" />\n`;
-        
-        // Ticks for Color Bar
-        const ticks = scenCfg.ticks;
+        // outline
+        svgContent += `    <rect x="${barX.toFixed(1)}" y="${barY.toFixed(1)}" width="${barW.toFixed(1)}" height="${barH.toFixed(1)}" fill="none" stroke="#0f172a" stroke-width="1" />\n`;
+
+        // Left arrow (pointing left = "below minimum")
+        const arrowLX = barX - arrowW;
+        const arrowMY = barY + barH / 2;
+        svgContent += `    <polygon points="${arrowLX.toFixed(1)},${arrowMY.toFixed(1)} ${barX.toFixed(1)},${barY.toFixed(1)} ${barX.toFixed(1)},${(barY+barH).toFixed(1)}" fill="${scenCfgColors[0]}" stroke="#0f172a" stroke-width="1" stroke-linejoin="round" />\n`;
+
+        // Right arrow (pointing right = "above maximum")
+        const arrowRX = barX + barW + arrowW;
+        svgContent += `    <polygon points="${arrowRX.toFixed(1)},${arrowMY.toFixed(1)} ${(barX+barW).toFixed(1)},${barY.toFixed(1)} ${(barX+barW).toFixed(1)},${(barY+barH).toFixed(1)}" fill="${scenCfgColors[nColors-1]}" stroke="#0f172a" stroke-width="1" stroke-linejoin="round" />\n`;
+
+        // Ticks
+        const ticks   = scenCfg.ticks;
         const minTick = ticks[0];
         const maxTick = ticks[ticks.length - 1];
-        
         ticks.forEach(v => {
             const pct = (v - minTick) / (maxTick - minTick);
-            const tx = barX + pct * barWidth;
-            svgContent += `    <line x1="${tx.toFixed(1)}" y1="${(barY + barHeight).toFixed(1)}" x2="${tx.toFixed(1)}" y2="${(barY + barHeight + 4).toFixed(1)}" stroke="#0f172a" stroke-width="1" />\n`;
-            svgContent += `    <text x="${tx.toFixed(1)}" y="${(barY + barHeight + 14).toFixed(1)}" font-family="Arial" font-size="9" text-anchor="middle" fill="#334155">${v.toFixed(1)}</text>\n`;
+            const tx  = barX + pct * barW;
+            svgContent += `    <line x1="${tx.toFixed(1)}" y1="${(barY+barH).toFixed(1)}" x2="${tx.toFixed(1)}" y2="${(barY+barH+5).toFixed(1)}" stroke="#0f172a" stroke-width="1" />\n`;
+            svgContent += `    <text x="${tx.toFixed(1)}" y="${(barY+barH+15).toFixed(1)}" font-family="Arial" font-size="9" text-anchor="middle" fill="#334155">${v.toFixed(1)}</text>\n`;
         });
-        
-        // Metric Unit below Color scale
-        svgContent += `    <text x="${(barX + barWidth / 2).toFixed(1)}" y="${(barY + barHeight + 32).toFixed(1)}" font-family="Arial" font-size="11" font-weight="bold" text-anchor="middle" fill="#0f172a">${varCfg.label} Change (${varCfg.unit})</text>\n`;
+
+        // Label
+        svgContent += `    <text x="${(barX+barW/2).toFixed(1)}" y="${(barY+barH+34).toFixed(1)}" font-family="Arial" font-size="11" font-weight="bold" text-anchor="middle" fill="#0f172a">${varCfg.label} Change (${varCfg.unit})</text>\n`;
     }
     
     // Add common footer & QR code to SVG bottom
-    const svgHeight = source.startsWith('map-') ? 900 : (source === 'bar-chart' ? 550 : 600);
+    const svgHeight = source.startsWith('map-') ? 980 : (source === 'bar-chart' ? 550 : 600);
     const svgWidth = 800;
     
     svgContent += `    <text x="40" y="${svgHeight - 45}" font-family="Arial" font-size="10" fill="#64748b">Source: Bias Corrected 0.25°×0.25° product developed at CCCR, IITM Pune</text>\n`;
@@ -694,7 +694,7 @@ async function runExportPNG(source, titleText, scale, includeQR) {
     
     // Canvas sizing based on source
     const baseWidth = 800;
-    const baseHeight = source.startsWith('map-') ? 900 : (source === 'bar-chart' ? 550 : 600);
+    const baseHeight = source.startsWith('map-') ? 980 : (source === 'bar-chart' ? 550 : 600);
     
     const width = baseWidth * scale;
     const height = baseHeight * scale;
@@ -744,158 +744,162 @@ async function runExportPNG(source, titleText, scale, includeQR) {
         
     } else if (source.startsWith('map-')) {
         const termKey = source.replace('map-', '');
-        
-        // Calculate dynamic projection bounds for India dataset
+
+        // --- Layout (matches SVG version) ---
+        const padLeft   = 68;
+        const padRight  = 20;
+        const padTop    = 100;
+        const padBottom = 160;
+
+        const drawW = baseWidth  - padLeft - padRight;
+        const drawH = baseHeight - padTop  - padBottom;
+
         const bounds = getGeoJSONBounds(datasetGeoJSON);
-        const minProj = projectMercator(bounds.minLat, bounds.minLng);
-        const maxProj = projectMercator(bounds.maxLat, bounds.maxLng);
-        
-        const dx = maxProj.x - minProj.x;
-        const dy = maxProj.y - minProj.y;
-        const aspect = dx / dy;
-        
-        const paddingOffset = 40;
-        const drawWidth = baseWidth - 2 * paddingOffset;
-        const drawHeight = 550;
-        
-        let finalDrawWidth = drawWidth;
-        let finalDrawHeight = drawHeight;
-        
-        if (drawWidth / drawHeight > aspect) {
-            finalDrawWidth = drawHeight * aspect;
-        } else {
-            finalDrawHeight = drawWidth / aspect;
-        }
-        
-        const offsetX = paddingOffset + (drawWidth - finalDrawWidth) / 2;
-        const offsetY = 120 + (drawHeight - finalDrawHeight) / 2;
-        
-        // Lat/Lng to Canvas Coordinates Projection helper
+        const lngSpan    = bounds.maxLng - bounds.minLng;
+        const latSpan    = bounds.maxLat - bounds.minLat;
+        const midLat     = (bounds.minLat + bounds.maxLat) / 2;
+        const cosCorrect = Math.cos((midLat * Math.PI) / 180);
+        const geoAspect  = (lngSpan * cosCorrect) / latSpan;
+        const canvAspect = drawW / drawH;
+
+        let finalW = drawW, finalH = drawH;
+        if (geoAspect < canvAspect) { finalW = drawH * geoAspect; }
+        else                        { finalH = drawW / geoAspect; }
+
+        const offX = padLeft + (drawW - finalW) / 2;
+        const offY = padTop  + (drawH - finalH) / 2;
+
+        // Equirectangular projector returning canvas pixels (already scaled)
+        const projector = makeProjector(bounds, offX, offY, finalW, finalH);
         const getCanvasCoords = (lat, lng) => {
-            const proj = projectMercator(lat, lng);
-            const x = (offsetX + ((proj.x - minProj.x) / (maxProj.x - minProj.x)) * finalDrawWidth) * scale;
-            const y = (offsetY + finalDrawHeight - ((proj.y - minProj.y) / (maxProj.y - minProj.y)) * finalDrawHeight) * scale;
-            return { x, y };
+            const p = projector(lat, lng);
+            return { x: p.x * scale, y: p.y * scale };
         };
-        
+        const getCanvasX = lng => projector(bounds.minLat, lng).x * scale;
+        const getCanvasY = lat => projector(lat, bounds.minLng).y * scale;
+
         const scenCfg = varCfg.scenarios[scenario];
-        
-        // Render features
+
+        // --- Render features ---
         datasetGeoJSON.features.forEach(feature => {
             const featureKey = levelsCfg[currentLevel].keyGen(feature.properties);
-            const dataRow = window.dataLookup[featureKey];
-            
+            const dataRow    = window.dataLookup[featureKey];
             let val = null;
             if (isTimeSeries) {
                 val = (termKey === 'near') ? (tsPeriodMeans[featureKey.toUpperCase()] || null) : null;
             } else {
                 val = dataRow ? dataRow[`${varCfg.json_key}_${scenario.toLowerCase()}_${termKey}`] : null;
             }
-            
-            const fillColor = window.getColor(val, scenCfg);
-            ctx.fillStyle = fillColor;
+            ctx.fillStyle   = window.getColor(val, scenCfg);
             ctx.strokeStyle = '#1e293b';
-            ctx.lineWidth = 0.5 * scale;
-            
+            ctx.lineWidth   = 0.5 * scale;
             const geom = feature.geometry;
             if (geom.type === 'Polygon') {
                 drawCanvasPolygon(ctx, geom.coordinates, getCanvasCoords);
             } else if (geom.type === 'MultiPolygon') {
-                geom.coordinates.forEach(polyCoords => {
-                    drawCanvasPolygon(ctx, polyCoords, getCanvasCoords);
-                });
+                geom.coordinates.forEach(pc => drawCanvasPolygon(ctx, pc, getCanvasCoords));
             }
         });
-        
-        // Outer Border Box
+
+        // --- Border ---
         ctx.strokeStyle = '#0f172a';
-        ctx.lineWidth = 1.5 * scale;
-        ctx.strokeRect(offsetX * scale, offsetY * scale, finalDrawWidth * scale, finalDrawHeight * scale);
-        
-        // Draw Ticks & Labels
-        const latTicks = [10, 15, 20, 25, 30, 35].filter(lat => lat >= bounds.minLat && lat <= bounds.maxLat);
-        const lngTicks = [70, 75, 80, 85, 90, 95].filter(lng => lng >= bounds.minLng && lng <= bounds.maxLng);
-        
+        ctx.lineWidth   = 1.5 * scale;
+        ctx.strokeRect(offX * scale, offY * scale, finalW * scale, finalH * scale);
+
+        // --- Lat/Lon ticks every 5° ---
         ctx.strokeStyle = '#0f172a';
-        ctx.fillStyle = '#0f172a';
-        ctx.lineWidth = 1.0 * scale;
-        ctx.font = `bold ${Math.round(10 * scale)}px Arial`;
-        
-        // Latitude Ticks
-        latTicks.forEach(lat => {
-            const { y } = getCanvasCoords(lat, bounds.minLng);
+        ctx.fillStyle   = '#0f172a';
+        ctx.lineWidth   = 1.0 * scale;
+        ctx.font        = `bold ${Math.round(10 * scale)}px Arial`;
+
+        const step = 5;
+        const latStart = Math.ceil(bounds.minLat / step) * step;
+        const lngStart = Math.ceil(bounds.minLng / step) * step;
+
+        for (let lat = latStart; lat <= bounds.maxLat; lat += step) {
+            const y = getCanvasY(lat);
             ctx.beginPath();
-            ctx.moveTo(offsetX * scale, y);
-            ctx.lineTo((offsetX - 6) * scale, y);
+            ctx.moveTo(offX * scale, y);
+            ctx.lineTo((offX - 6) * scale, y);
             ctx.stroke();
-            
-            ctx.textAlign = 'right';
+            ctx.textAlign    = 'right';
             ctx.textBaseline = 'middle';
-            ctx.fillText(`${lat}°N`, (offsetX - 10) * scale, y);
-        });
-        
-        // Longitude Ticks
-        lngTicks.forEach(lng => {
-            const { x } = getCanvasCoords(bounds.minLat, lng);
-            const yEdge = (offsetY + finalDrawHeight) * scale;
+            ctx.fillText(`${lat}°N`, (offX - 9) * scale, y);
+        }
+        for (let lng = lngStart; lng <= bounds.maxLng; lng += step) {
+            const x    = getCanvasX(lng);
+            const yBot = (offY + finalH) * scale;
             ctx.beginPath();
-            ctx.moveTo(x, yEdge);
-            ctx.lineTo(x, yEdge + 6 * scale);
+            ctx.moveTo(x, yBot);
+            ctx.lineTo(x, yBot + 6 * scale);
             ctx.stroke();
-            
-            ctx.textAlign = 'center';
+            ctx.textAlign    = 'center';
             ctx.textBaseline = 'top';
-            ctx.fillText(`${lng}°E`, x, yEdge + 10 * scale);
-        });
-        
-        // Horizontal Color Legend
-        const barWidth = finalDrawWidth * 0.65;
-        const barHeight = 14;
-        const barX = offsetX + (finalDrawWidth - barWidth) / 2;
-        const barY = offsetY + finalDrawHeight + 60;
-        
-        // Draw Color Blocks
-        const nColors = scenCfg.colors.length;
-        const blockWidth = barWidth / nColors;
+            ctx.fillText(`${lng}°E`, x, yBot + 8 * scale);
+        }
+
+        // --- Colorbar ---
+        const arrowW = 14;
+        const barW   = finalW * 0.7;
+        const barH   = 16;
+        const barX   = offX + (finalW - barW) / 2;
+        const barY   = offY + finalH + 50;
+
+        const nColors  = scenCfg.colors.length;
+        const blockW   = barW / nColors;
         scenCfg.colors.forEach((color, idx) => {
             ctx.fillStyle = color;
-            ctx.fillRect(
-                (barX + idx * blockWidth) * scale, 
-                barY * scale, 
-                (blockWidth + 0.15) * scale, 
-                barHeight * scale
-            );
+            ctx.fillRect((barX + idx * blockW) * scale, barY * scale, (blockW + 0.2) * scale, barH * scale);
         });
-        
         ctx.strokeStyle = '#0f172a';
-        ctx.lineWidth = 1.0 * scale;
-        ctx.strokeRect(barX * scale, barY * scale, barWidth * scale, barHeight * scale);
-        
-        // Legend Ticks
-        const ticks = scenCfg.ticks;
+        ctx.lineWidth   = 1.0 * scale;
+        ctx.strokeRect(barX * scale, barY * scale, barW * scale, barH * scale);
+
+        // Left arrow
+        const arrowMY = (barY + barH / 2) * scale;
+        ctx.fillStyle   = scenCfg.colors[0];
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth   = 1.0 * scale;
+        ctx.beginPath();
+        ctx.moveTo((barX - arrowW) * scale, arrowMY);
+        ctx.lineTo(barX * scale, barY * scale);
+        ctx.lineTo(barX * scale, (barY + barH) * scale);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+
+        // Right arrow
+        ctx.fillStyle = scenCfg.colors[nColors - 1];
+        ctx.beginPath();
+        ctx.moveTo((barX + barW + arrowW) * scale, arrowMY);
+        ctx.lineTo((barX + barW) * scale, barY * scale);
+        ctx.lineTo((barX + barW) * scale, (barY + barH) * scale);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+
+        // Ticks
+        const ticks   = scenCfg.ticks;
         const minTick = ticks[0];
         const maxTick = ticks[ticks.length - 1];
-        
-        ctx.fillStyle = '#334155';
-        ctx.font = `${Math.round(9 * scale)}px Arial`;
-        ctx.textAlign = 'center';
+        ctx.fillStyle    = '#334155';
+        ctx.font         = `${Math.round(9 * scale)}px Arial`;
+        ctx.textAlign    = 'center';
         ctx.textBaseline = 'top';
-        
         ticks.forEach(v => {
             const pct = (v - minTick) / (maxTick - minTick);
-            const tx = (barX + pct * barWidth) * scale;
+            const tx  = (barX + pct * barW) * scale;
+            ctx.strokeStyle = '#0f172a';
+            ctx.lineWidth   = 1.0 * scale;
             ctx.beginPath();
-            ctx.moveTo(tx, (barY + barHeight) * scale);
-            ctx.lineTo(tx, (barY + barHeight + 4) * scale);
+            ctx.moveTo(tx, (barY + barH) * scale);
+            ctx.lineTo(tx, (barY + barH + 5) * scale);
             ctx.stroke();
-            
-            ctx.fillText(v.toFixed(1), tx, (barY + barHeight + 6) * scale);
+            ctx.fillStyle = '#334155';
+            ctx.fillText(v.toFixed(1), tx, (barY + barH + 7) * scale);
         });
-        
-        // Variable Label
-        ctx.fillStyle = '#0f172a';
-        ctx.font = `bold ${Math.round(11 * scale)}px Arial`;
-        ctx.fillText(`${varCfg.label} Change (${varCfg.unit})`, (barX + barWidth / 2) * scale, (barY + barHeight + 24) * scale);
+
+        // Label
+        ctx.fillStyle    = '#0f172a';
+        ctx.font         = `bold ${Math.round(11 * scale)}px Arial`;
+        ctx.textAlign    = 'center';
+        ctx.fillText(`${varCfg.label} Change (${varCfg.unit})`, (barX + barW / 2) * scale, (barY + barH + 26) * scale);
     }
     
     // Footer texts
