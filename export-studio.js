@@ -533,7 +533,7 @@ async function runExportSVG(source, titleText, includeQR) {
         const drawW = svgWidth  - padLeft - padRight;
         const drawH = svgHeight - padTop  - padBottom;
 
-        const bounds = getGeoJSONBounds(datasetGeoJSON);
+        const bounds = MAP_BOUNDS;
 
         // Equirectangular: preserve aspect (lngSpan/latSpan corrected for cosine)
         const lngSpan    = bounds.maxLng - bounds.minLng;
@@ -754,7 +754,7 @@ async function runExportPNG(source, titleText, scale, includeQR) {
         const drawW = baseWidth  - padLeft - padRight;
         const drawH = baseHeight - padTop  - padBottom;
 
-        const bounds = getGeoJSONBounds(datasetGeoJSON);
+        const bounds = MAP_BOUNDS;
         const lngSpan    = bounds.maxLng - bounds.minLng;
         const latSpan    = bounds.maxLat - bounds.minLat;
         const midLat     = (bounds.minLat + bounds.maxLat) / 2;
