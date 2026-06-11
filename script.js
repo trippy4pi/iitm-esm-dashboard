@@ -499,7 +499,7 @@ function buildLegendBar(cfg) {
         .catch(err => {
             console.warn('Failed to load real-time visits from PHP:', err);
             // Fallback to offline localStorage if PHP is not responding
-            let visits = parseInt(localStorage.getItem('iitm_esm_lifetime_visits') || '1482', 10) + 1;
+            let visits = parseInt(localStorage.getItem('iitm_esm_lifetime_visits') || '0', 10) + 1;
             localStorage.setItem('iitm_esm_lifetime_visits', visits);
             const visitsEl = document.getElementById('visit-count');
             if (visitsEl) visitsEl.innerText = visits.toLocaleString();

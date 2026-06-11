@@ -3,7 +3,7 @@ header('Content-Type: application/json');
 header('Cache-Control: no-cache, no-store, must-revalidate');
 
 $file = 'JSONs/lifetime_visits.txt';
-$default_visits = 1482;
+$default_visits = 0;
 
 $fp = fopen($file, 'c+');
 $visits = $default_visits;
