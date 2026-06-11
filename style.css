@@ -1921,8 +1921,8 @@ footer {
 
     .mobile-controls-row .search-box {
         display: flex !important;
-        width: calc(30% - 4px) !important;
-        flex: 0 0 calc(30% - 4px) !important;
+        width: calc(25% - 4px) !important;
+        flex: 0 0 calc(25% - 4px) !important;
         height: auto !important;
         min-height: 44px;
         margin: 0 !important;
@@ -1933,15 +1933,15 @@ footer {
     }
 
     .mobile-controls-row .search-box:focus-within {
-        width: calc(30% - 4px) !important;
+        width: calc(25% - 4px) !important;
         border-color: #38bdf8 !important;
     }
 
     .mobile-filter-accordion {
         display: block;
         position: relative; /* Sit in normal document flow */
-        width: calc(70% - 4px) !important;
-        flex: 0 0 calc(70% - 4px) !important;
+        width: calc(75% - 4px) !important;
+        flex: 0 0 calc(75% - 4px) !important;
         max-width: none !important;
         margin: 0 !important;
         background: rgba(12, 74, 110, 0.88) !important;
@@ -2031,8 +2031,8 @@ footer {
         display: flex !important;
         justify-content: center;
         width: 100%;
-        margin-bottom: 0 !important;
-        grid-column: 2 !important;
+        margin-bottom: 4px !important;
+        grid-column: span 2 !important;
         grid-row: 1 !important;
     }
 
@@ -2045,8 +2045,8 @@ footer {
     }
 
     .filter-accordion-content .variable-selector {
-        grid-column: 1 !important;
-        grid-row: 1 !important;
+        grid-column: span 2 !important;
+        grid-row: 2 !important;
         width: 100%;
         display: flex;
         justify-content: center;
@@ -2156,7 +2156,7 @@ footer {
     /* Keep the horizontal sliding radios look exactly as desktop */
     .filter-accordion-content .scenario-radios {
         grid-column: span 2 !important;
-        grid-row: 2 !important;
+        grid-row: 3 !important;
         width: 100% !important;
         max-width: none !important;
         height: 36px !important;
