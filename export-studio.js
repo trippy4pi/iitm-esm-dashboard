@@ -146,11 +146,8 @@ window.openExportStudio = function(source) {
         defaultTitle = `${varCfg.label} Time Series for ${displayStateName} (${tsStartYear}-${tsEndYear})`;
     } else if (source === 'bar-chart') {
         defaultTitle = `${varCfg.label} Comparison by State/UT under ${scenario} (${seasonLabel})`;
-    } else if (source.startsWith('map-')) {
-        const termKey = source.replace('map-', '');
-        const termLabel = terms[termKey]?.label || '';
-        const termYears = terms[termKey]?.years || '';
-        defaultTitle = `${varCfg.label} Change under ${scenario} (${seasonLabel}) - ${termLabel} ${termYears}`;
+        const cleanLabel = varCfg.label.toLowerCase().endsWith('change') ? varCfg.label : `${varCfg.label} Change`;
+        defaultTitle = `${cleanLabel} under ${scenario} (${seasonLabel}) - ${termLabel} ${termYears}`;
     }
     
     const overlay = document.getElementById('export-studio-overlay');
@@ -445,6 +442,7 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
     const scenario = window.selectedScenario?.() || 'SSP585';
     const varCfg = variablesConfig[metric];
     const seasonLabel = tsSeasonLabels[tsSeason] || tsSeason.toUpperCase();
+    const varLabel = varCfg.label.toLowerCase().endsWith('change') ? varCfg.label : `${varCfg.label} Change`;
     const isTimeSeries = document.body.classList.contains('time-series-mode');
     
     onProgress(5, 'Preparing export…');
@@ -507,7 +505,7 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
         
         // Axis Titles
         svgContent += `    <text x="${(padding.left + plotWidth / 2).toFixed(1)}" y="${(svgHeight - padding.bottom + 48).toFixed(1)}" font-family="System-UI, -apple-system, sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">Year</text>\n`;
-        svgContent += `    <text transform="rotate(-90)" x="-${(padding.top + plotHeight / 2).toFixed(1)}" y="${(padding.left - 50).toFixed(1)}" font-family="System-UI, -apple-system, sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">${varCfg.label} Change (${varCfg.unit})</text>\n`;
+        svgContent += `    <text transform="rotate(-90)" x="-${(padding.top + plotHeight / 2).toFixed(1)}" y="${(padding.left - 50).toFixed(1)}" font-family="System-UI, -apple-system, sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">${varLabel} (${varCfg.unit})</text>\n`;
         
         // Draw lines
         tsChart.data.datasets.forEach(ds => {
@@ -602,7 +600,7 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
         });
         
         // Axis Title
-        svgContent += `    <text transform="rotate(-90)" x="-${(padding.top + plotHeight / 2).toFixed(1)}" y="${(padding.left - 50).toFixed(1)}" font-family="System-UI, -apple-system, sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">${varCfg.label} Change (${varCfg.unit})</text>\n`;
+        svgContent += `    <text transform="rotate(-90)" x="-${(padding.top + plotHeight / 2).toFixed(1)}" y="${(padding.left - 50).toFixed(1)}" font-family="System-UI, -apple-system, sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">${varLabel} (${varCfg.unit})</text>\n`;
         
     } else if (source.startsWith('map-')) {
         onProgress(5, 'Loading district boundaries from GeoJSON data…');
@@ -758,7 +756,7 @@ async function runExportSVG(source, titleText, includeQR, onProgress, yieldFn) {
         });
 
         // Label
-        svgContent += `    <text x="${(barX+barW/2).toFixed(1)}" y="${(barY+barH+34).toFixed(1)}" font-family="Arial" font-size="11" font-weight="bold" text-anchor="middle" fill="#0f172a">${varCfg.label} Change (${varCfg.unit})</text>\n`;
+        svgContent += `    <text x="${(barX+barW/2).toFixed(1)}" y="${(barY+barH+34).toFixed(1)}" font-family="Arial" font-size="11" font-weight="bold" text-anchor="middle" fill="#0f172a">${varLabel} (${varCfg.unit})</text>\n`;
         
         onProgress(90, 'Constructing linear colorbar scale…');
         await sleep(1000);
@@ -820,6 +818,7 @@ async function runExportPNG(source, titleText, scale, includeQR, onProgress, yie
     const scenario = window.selectedScenario?.() || 'SSP585';
     const varCfg = variablesConfig[metric];
     const seasonLabel = tsSeasonLabels[tsSeason] || tsSeason.toUpperCase();
+    const varLabel = varCfg.label.toLowerCase().endsWith('change') ? varCfg.label : `${varCfg.label} Change`;
     const isTimeSeries = document.body.classList.contains('time-series-mode');
     
     // Canvas sizing based on source
@@ -1090,7 +1089,7 @@ async function runExportPNG(source, titleText, scale, includeQR, onProgress, yie
         ctx.fillStyle    = '#0f172a';
         ctx.font         = `bold ${Math.round(11 * scale)}px Arial`;
         ctx.textAlign    = 'center';
-        ctx.fillText(`${varCfg.label} Change (${varCfg.unit})`, (barX + barW / 2) * scale, (barY + barH + 26) * scale);
+        ctx.fillText(`${varLabel} (${varCfg.unit})`, (barX + barW / 2) * scale, (barY + barH + 26) * scale);
         
         onProgress(90, 'Constructing linear colorbar scale…');
         await sleep(1000);
