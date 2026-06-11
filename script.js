@@ -1799,6 +1799,12 @@ function populateSearch() {
 
     // Only attach DOM event listeners once; on subsequent calls just update closure refs
     if (!_searchInitialized) {
+        input.addEventListener('focus', () => {
+            const accordion = document.getElementById('mobile-filter-accordion');
+            if (accordion && accordion.classList.contains('open')) {
+                document.getElementById('filter-accordion-toggle')?.click();
+            }
+        });
         input.addEventListener('input', () => updateResults());
         input.addEventListener('keydown', (e) => {
             if (!container.classList.contains('visible')) return;
@@ -2263,6 +2269,12 @@ checkCMIP7Availability();
     toggleBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         const isOpen = accordion.classList.toggle('open');
+        
+        // Auto-close search suggestions when accordion opens
+        if (isOpen) {
+            const searchPopup = document.getElementById('search-results');
+            if (searchPopup) searchPopup.classList.remove('visible');
+        }
         
         // Trigger map invalidation after toggle animation to keep views sync'd
         setTimeout(() => {
