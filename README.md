@@ -1,6 +1,6 @@
 # IITM ESM Climate Projections Dashboard
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)
 ![Status](https://img.shields.io/badge/status-Production_Ready-success.svg)
 
 ## Overview
@@ -52,4 +52,5 @@ This dashboard is completely static (with the exception of the lightweight PHP a
 *Note: For the analytics trackers to work, PHP must be installed and configured on the host server. If PHP is unavailable, the frontend safely falls back to local `localStorage` offline tracking without throwing errors.*
 
 ## Version History
+- **v1.0.1**: Fixed caching issues causing district maps for Max and Min temperature variables to display empty/blank layouts on returning user visits. Implemented strict version query strings to bypass Service Worker caches for variables configs, geojson features, and district CSV files.
 - **v1.0.0**: Initial Production Release. Includes all core visualizations, robust mobile layouts, PWA caching, Export Studio, and live tracking.

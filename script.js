@@ -1,3 +1,6 @@
+// App Version Control
+const APP_VERSION = '1.0.1';
+
 // Global state
 let variablesConfig = null;
 let datasetJSON = null;
@@ -551,17 +554,17 @@ async function load() {
         } else {
             if (currentLevel === 'state') {
                 const [vResp, gResp] = await Promise.all([
-                    fetch(config.variables),
-                    fetch(config.geojson)
+                    fetch(`${config.variables}?v=${APP_VERSION}`),
+                    fetch(`${config.geojson}?v=${APP_VERSION}`)
                 ]);
                 variablesConfig = await vResp.json();
                 datasetGeoJSON = await gResp.json();
                 rawData = await loadStateTimeSeriesData();
             } else {
                 const [vResp, dResp, gResp] = await Promise.all([
-                    fetch(config.variables),
-                    fetch(config.data.replace('cmip6', currentProjection)),
-                    fetch(config.geojson)
+                    fetch(`${config.variables}?v=${APP_VERSION}`),
+                    fetch(`${config.data.replace('cmip6', currentProjection)}?v=${APP_VERSION}`),
+                    fetch(`${config.geojson}?v=${APP_VERSION}`)
                 ]);
                 variablesConfig = await vResp.json();
                 const csvText = await dResp.text();
@@ -2222,7 +2225,7 @@ function updateMetricDropdownButtonText(proj, val, fullLabelText) {
 // CMIP7 Availability Checker
 async function checkCMIP7Availability() {
     try {
-        const resp = await fetch('CSVs/cmip7_district_anomalies.csv');
+        const resp = await fetch(`CSVs/cmip7_district_anomalies.csv?v=${APP_VERSION}`);
         if (resp.ok) {
             enableCMIP7Menu();
         }
