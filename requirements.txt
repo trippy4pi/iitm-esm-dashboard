@@ -1,0 +1,8 @@
+geopandas
+rioxarray
+xarray
+shapely
+pandas
+numpy
+cftime
+netcdf4

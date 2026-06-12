@@ -49,7 +49,22 @@ This dashboard is completely static (with the exception of the lightweight PHP a
 2. Ensure the `JSONs/` directory has write permissions (`chmod 777 JSONs/`) so the PHP scripts can update `lifetime_visits.txt` and `active_sessions.json`.
 3. Serve via your web server. 
 
-*Note: For the analytics trackers to work, PHP must be installed and configured on the host server. If PHP is unavailable, the frontend safely falls back to local `localStorage` offline tracking without throwing errors.*
+## Processing Climate Anomalies Locally
+The repository includes `anomaly_script.py` which calculates climate anomalies from raw NetCDF daily datasets for states and districts.
+
+### 1. Installation
+Install the required Python packages in your local environment using the provided `requirements.txt`:
+```bash
+pip install -r requirements.txt
+```
+
+### 2. Execution
+1. Place your NetCDF daily datasets inside a local directory named `daily_data/` (or configure a custom path using the `DAILY_DATA_PATH` environment variable).
+2. Ensure the state and district GeoJSON boundary files are located at `JSONs/state_ultra_optimized.geojson` and `JSONs/districts_ultra_optimized.geojson`.
+3. Run the script:
+```bash
+python anomaly_script.py
+```
 
 ## Version History
 - **v1.0.1**: Fixed caching issues causing district maps for Max and Min temperature variables to display empty/blank layouts on returning user visits. Implemented strict version query strings to bypass Service Worker caches for variables configs, geojson features, and district CSV files.
