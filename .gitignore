@@ -1,9 +1,7 @@
 # Local data files
 CSVs/
-JSONs/District_DATA.json
-JSONs/state_time_series_data.json
-JSONs/District_DATA.json.tmp
-JSONs/state_time_series_data.json.tmp
+JSONs/lifetime_visits.txt
+JSONs/download_logs.txt
 
 # Assets directory (contains custom images, icons, and third-party JS libraries)
 assets/
